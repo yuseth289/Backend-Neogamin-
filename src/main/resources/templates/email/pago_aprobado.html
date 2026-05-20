@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Pago aprobado — NeoGaming</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0f0f; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #1a1a2e; border-radius: 12px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #00c853, #1b5e20); padding: 36px 30px; text-align: center; }
+        .header h1 { color: #ffffff; font-size: 26px; margin: 0; }
+        .header p { color: #c8e6c9; margin: 8px 0 0; font-size: 14px; }
+        .body { padding: 36px 30px; color: #e0e0e0; }
+        .body h2 { color: #ffffff; font-size: 20px; margin-top: 0; }
+        .info-box { background: #12122a; border-left: 4px solid #6c63ff; border-radius: 6px; padding: 16px 20px; margin: 20px 0; }
+        .info-box p { margin: 6px 0; font-size: 14px; color: #cccccc; }
+        .info-box strong { color: #ffffff; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        thead th { background: #12122a; color: #aaaaaa; font-size: 12px; padding: 10px 12px; text-align: left; }
+        tbody td { padding: 10px 12px; border-bottom: 1px solid #2a2a4a; font-size: 14px; color: #cccccc; }
+        .total-row td { font-weight: bold; color: #ffffff; border-top: 2px solid #6c63ff; border-bottom: none; }
+        .btn { display: inline-block; margin: 20px 0; padding: 13px 28px; background: #6c63ff;
+               color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; }
+        .footer { background: #0f0f1a; padding: 20px 30px; text-align: center; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>✅ ¡Pago aprobado!</h1>
+        <p>Tu orden está siendo procesada</p>
+    </div>
+    <div class="body">
+        <h2>Hola, <span th:text="${nombre}">Comprador</span></h2>
+        <p>Tu pago fue aprobado exitosamente. Hemos notificado a los vendedores y pronto comenzarán a preparar tus productos.</p>
+
+        <div class="info-box">
+            <p><strong>Número de orden:</strong> <span th:text="${numeroOrden}">NG-2026-000001</span></p>
+            <p><strong>Número de factura:</strong> <span th:text="${numeroFactura}">NG-2026-000001</span></p>
+            <p><strong>Método de pago:</strong> <span th:text="${metodoPago}">PSE</span></p>
+            <p><strong>Fecha:</strong> <span th:text="${fechaPago}">2026-05-19</span></p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cant.</th>
+                    <th>Precio</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${items}">
+                    <td th:text="${item.productName}">Producto</td>
+                    <td th:text="${item.quantity}">1</td>
+                    <td th:text="'$' + ${#numbers.formatDecimal(item.unitPrice, 0, 'COMMA', 0, 'POINT')} + ' COP'">$0 COP</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="2">Total pagado</td>
+                    <td th:text="'$' + ${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')} + ' COP'">$0 COP</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <a th:href="${ordenUrl}" class="btn">Ver detalle de mi orden</a>
+
+        <p style="color: #888; font-size: 13px;">
+            Recibirás actualizaciones del envío a medida que los vendedores procesen tu pedido.
+        </p>
+    </div>
+    <div class="footer">
+        © 2026 NeoGaming S.A.S · Bogotá, Colombia · Todos los derechos reservados
+    </div>
+</div>
+</body>
+</html>
