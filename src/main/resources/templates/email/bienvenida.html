@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Bienvenido a NeoGaming</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0f0f; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 30px auto; background: #1a1a2e; border-radius: 12px; overflow: hidden; }
+        .header { background: linear-gradient(135deg, #6c63ff, #3f3d56); padding: 40px 30px; text-align: center; }
+        .header h1 { color: #ffffff; font-size: 28px; margin: 0; }
+        .header p { color: #d0cfff; margin: 8px 0 0; font-size: 14px; }
+        .body { padding: 36px 30px; color: #e0e0e0; }
+        .body h2 { color: #ffffff; font-size: 22px; margin-top: 0; }
+        .body p { line-height: 1.7; color: #bbbbbb; }
+        .btn { display: inline-block; margin: 24px 0; padding: 14px 32px; background: #6c63ff;
+               color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; }
+        .footer { background: #0f0f1a; padding: 20px 30px; text-align: center; color: #666; font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎮 NeoGaming</h1>
+        <p>El marketplace gamer de Colombia</p>
+    </div>
+    <div class="body">
+        <h2>¡Bienvenido, <span th:text="${nombre}">Usuario</span>!</h2>
+        <p>
+            Tu cuenta en NeoGaming ha sido creada exitosamente.
+            Ahora puedes explorar miles de productos de gaming, consolas, accesorios y mucho más.
+        </p>
+        <p>
+            Encuentra los mejores precios de vendedores verificados en todo Colombia,
+            paga con PSE, Nequi o tarjeta de crédito y recibe tu pedido en casa.
+        </p>
+        <a th:href="${appUrl}" class="btn">Explorar productos</a>
+        <p style="color: #888; font-size: 13px;">
+            Si no creaste esta cuenta, ignora este correo o contáctanos en soporte@neogaming.co
+        </p>
+    </div>
+    <div class="footer">
+        © 2026 NeoGaming S.A.S · Bogotá, Colombia · Todos los derechos reservados
+    </div>
+</div>
+</body>
+</html>

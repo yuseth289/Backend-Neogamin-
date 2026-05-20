@@ -1,0 +1,43 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:neogaming_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+  flyway:
+    enabled: false
+
+  mail:
+    host: localhost
+    port: 1025
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+app:
+  jwt:
+    secret: test-secret-key-for-unit-tests-only-minimum-256-bits-length-padding-here
+    access-token-minutes: 15
+    refresh-token-days: 30
+  business:
+    platform-fee-percentage: 5.0
+    checkout-expiry-minutes: 30
+    default-currency: COP
+    default-tax-rate: 19.0
+  base-url: http://localhost:8080
+
+mercadopago:
+  access-token: TEST-000000000000000-000000-00000000000000000000000000000000-000000000
+  webhook-secret:
+  sandbox: true

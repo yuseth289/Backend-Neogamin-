@@ -1,0 +1,869 @@
+{
+  "info": {
+    "name": "NeoGaming Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "categoryId", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "checkoutId", "value": "" },
+    { "key": "addressId", "value": "" },
+    { "key": "wishlistId", "value": "" },
+    { "key": "sellerId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Registrar usuario",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) {",
+            "  const d = pm.response.json().data;",
+            "  pm.collectionVariables.set('accessToken', d.accessToken);",
+            "  pm.collectionVariables.set('refreshToken', d.refreshToken);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"cliente@neogaming.co\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"García\",\n  \"phone\": \"3001234567\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 200) {",
+            "  const d = pm.response.json().data;",
+            "  pm.collectionVariables.set('accessToken', d.accessToken);",
+            "  pm.collectionVariables.set('refreshToken', d.refreshToken);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"cliente@neogaming.co\",\n  \"password\": \"Password123!\"\n}" }
+          }
+        },
+        {
+          "name": "Refresh token",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 200) {",
+            "  const d = pm.response.json().data;",
+            "  pm.collectionVariables.set('accessToken', d.accessToken);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Usuario",
+      "item": [
+        {
+          "name": "Mi perfil",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Actualizar perfil",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"García\",\n  \"phone\": \"3009876543\"\n}" }
+          }
+        },
+        {
+          "name": "Cambiar contraseña",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/me/password",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"NuevaPassword456!\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Catálogo — Categorías",
+      "item": [
+        {
+          "name": "Listar categorías",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories"
+          }
+        },
+        {
+          "name": "Obtener categoría por slug",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categories/videojuegos"
+          }
+        },
+        {
+          "name": "Crear categoría (ADMIN)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) {",
+            "  pm.collectionVariables.set('categoryId', pm.response.json().data.id);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categories",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Videojuegos\",\n  \"description\": \"Consolas, juegos y accesorios\",\n  \"parentId\": null\n}" }
+          }
+        },
+        {
+          "name": "Actualizar categoría (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/categories/{{categoryId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Videojuegos y Consolas\",\n  \"description\": \"Consolas, juegos, accesorios y más\"\n}" }
+          }
+        },
+        {
+          "name": "Eliminar categoría (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/categories/{{categoryId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛍️ Catálogo — Productos",
+      "item": [
+        {
+          "name": "Buscar productos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?q=mouse&page=0&size=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "q", "value": "mouse" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "12" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar (search avanzado)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=teclado&category={{categoryId}}&minPrice=50000&maxPrice=500000",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "search"],
+              "query": [
+                { "key": "q", "value": "teclado" },
+                { "key": "category", "value": "{{categoryId}}" },
+                { "key": "minPrice", "value": "50000" },
+                { "key": "maxPrice", "value": "500000" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Productos por categoría",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/category/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Detalle producto por slug",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/mouse-gamer-rgb"
+          }
+        },
+        {
+          "name": "Mis productos (SELLER)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Crear producto (SELLER)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) {",
+            "  pm.collectionVariables.set('productId', pm.response.json().data.id);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/products",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Mouse Gamer RGB Inalámbrico\",\n  \"description\": \"Mouse profesional para gaming con 6 botones programables\",\n  \"brand\": \"Logitech\",\n  \"sku\": \"LOG-G502-RGB\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"basePrice\": 250000.00,\n  \"ivaPercent\": 19.00\n}" }
+          }
+        },
+        {
+          "name": "Actualizar producto (SELLER)",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/products/me/{{productId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Mouse Gamer RGB Inalámbrico Pro\",\n  \"description\": \"Mouse profesional para gaming con 8 botones programables\",\n  \"basePrice\": 280000.00,\n  \"ivaPercent\": 19.00\n}" }
+          }
+        },
+        {
+          "name": "Publicar producto (SELLER)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/products/me/{{productId}}/publish",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Pausar producto (SELLER)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/products/me/{{productId}}/pause",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Eliminar producto (SELLER)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/me/{{productId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Agregar imagen (SELLER)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/products/me/{{productId}}/images",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"url\": \"https://cdn.neogaming.co/products/mouse-rgb-1.jpg\",\n  \"altText\": \"Mouse RGB vista frontal\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏪 Vendedor",
+      "item": [
+        {
+          "name": "Tienda pública por slug",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sellers/mi-tienda"
+          }
+        },
+        {
+          "name": "Registrar como vendedor",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sellers/register",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"storeName\": \"Mi Tienda Gamer\",\n  \"storeDescription\": \"Venta de periféricos y accesorios gaming\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"1234567890\",\n  \"tipoRegimen\": \"NO_RESPONSABLE_IVA\",\n  \"phone\": \"3001234567\",\n  \"address\": \"Cra 7 # 32-15\",\n  \"city\": \"Bogotá\",\n  \"department\": \"Cundinamarca\"\n}" }
+          }
+        },
+        {
+          "name": "Mi perfil de vendedor",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sellers/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Actualizar mi tienda",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/sellers/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"storeName\": \"Mi Tienda Gamer Pro\",\n  \"storeDescription\": \"La mejor tienda de gaming en Colombia\",\n  \"phone\": \"3009876543\",\n  \"city\": \"Medellín\",\n  \"department\": \"Antioquia\"\n}" }
+          }
+        },
+        {
+          "name": "Mis cuentas de pago",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/sellers/me/accounts",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Agregar cuenta de pago",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/sellers/me/accounts",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"bankName\": \"Bancolombia\",\n  \"accountType\": \"AHORROS\",\n  \"accountNumber\": \"123456789012\",\n  \"accountHolder\": \"Carlos García\",\n  \"holderDocument\": \"1234567890\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛒 Carrito",
+      "item": [
+        {
+          "name": "Ver mi carrito",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cart",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Agregar producto al carrito",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/cart/items",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}" }
+          }
+        },
+        {
+          "name": "Actualizar cantidad de ítem",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/cart/items/{{productId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 3\n}" }
+          }
+        },
+        {
+          "name": "Eliminar ítem del carrito",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/cart/items/{{productId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Vaciar carrito",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/cart",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "📍 Direcciones",
+      "item": [
+        {
+          "name": "Mis direcciones",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/me/addresses",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Agregar dirección",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) {",
+            "  pm.collectionVariables.set('addressId', pm.response.json().data.id);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/users/me/addresses",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"Casa\",\n  \"street\": \"Cra 7\",\n  \"number\": \"# 32-15\",\n  \"floor\": \"3\",\n  \"apartment\": \"301\",\n  \"city\": \"Bogotá\",\n  \"department\": \"Cundinamarca\",\n  \"postalCode\": \"110221\"\n}" }
+          }
+        },
+        {
+          "name": "Obtener dirección",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/users/me/addresses/{{addressId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Actualizar dirección",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/users/me/addresses/{{addressId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"Casa principal\",\n  \"street\": \"Cra 15\",\n  \"number\": \"# 85-30\",\n  \"city\": \"Bogotá\",\n  \"department\": \"Cundinamarca\"\n}" }
+          }
+        },
+        {
+          "name": "Establecer como principal",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/users/me/addresses/{{addressId}}/set-primary",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Eliminar dirección",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/users/me/addresses/{{addressId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Checkout",
+      "item": [
+        {
+          "name": "Iniciar checkout",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) {",
+            "  pm.collectionVariables.set('checkoutId', pm.response.json().data.id);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/checkout",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"addressId\": \"{{addressId}}\"\n}" }
+          }
+        },
+        {
+          "name": "Ver checkout actual",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/checkout/current",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Cancelar checkout",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/checkout/current",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "💰 Pagos",
+      "item": [
+        {
+          "name": "Iniciar pago (MercadoPago)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/payments/checkout/{{checkoutId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Pedidos",
+      "item": [
+        {
+          "name": "Mis pedidos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Detalle de pedido",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{orderId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Actualizar estado de grupo (SELLER)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/orders/{{orderId}}/groups/GROUP_ID/status",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"SHIPPED\",\n  \"trackingNumber\": \"COL123456789\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🧾 Facturas",
+      "item": [
+        {
+          "name": "Mis facturas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/invoices",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Factura por orden",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/invoices/order/{{orderId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Todas las facturas (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/invoices",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Cancelar factura (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/admin/invoices/INVOICE_ID/cancel",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Error en el pedido del cliente\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⭐ Reseñas",
+      "item": [
+        {
+          "name": "Reseñas de un producto",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/{{productId}}/reviews"
+          }
+        },
+        {
+          "name": "Resumen de reseñas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/{{productId}}/reviews/summary"
+          }
+        },
+        {
+          "name": "Crear reseña",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/reviews",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"orderId\": \"{{orderId}}\",\n  \"rating\": 5,\n  \"title\": \"Excelente producto\",\n  \"body\": \"Muy buena calidad, llegó en perfecto estado y antes de tiempo.\"\n}" }
+          }
+        },
+        {
+          "name": "Mis reseñas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/reviews/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Eliminar mi reseña",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/reviews/REVIEW_ID",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Todas las reseñas (ADMIN)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/reviews",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Moderar reseña (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/admin/reviews/REVIEW_ID/moderate",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"action\": \"APPROVE\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ Wishlist",
+      "item": [
+        {
+          "name": "Mis wishlists",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/wishlists",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Crear wishlist",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "if (pm.response.code === 201) {",
+            "  pm.collectionVariables.set('wishlistId', pm.response.json().data.id);",
+            "}"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/wishlists",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Mis deseos navideños\",\n  \"isPublic\": false\n}" }
+          }
+        },
+        {
+          "name": "Agregar producto a wishlist",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/wishlists/{{wishlistId}}/items/{{productId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Eliminar producto de wishlist",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/wishlists/{{wishlistId}}/items/{{productId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Wishlist pública",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/wishlists/public/{{wishlistId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Inventario (SELLER/ADMIN)",
+      "item": [
+        {
+          "name": "Ver inventario de producto",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/inventory/{{productId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Agregar stock",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/inventory/{{productId}}/stock",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 50,\n  \"notes\": \"Reposición de inventario\"\n}" }
+          }
+        },
+        {
+          "name": "Ajustar stock",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/inventory/{{productId}}/stock",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": -5,\n  \"notes\": \"Ajuste por daño en bodega\"\n}" }
+          }
+        },
+        {
+          "name": "Movimientos de inventario",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/inventory/{{productId}}/movements",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏷️ Ofertas",
+      "item": [
+        {
+          "name": "Oferta vigente de producto",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/{{productId}}/offers/current"
+          }
+        },
+        {
+          "name": "Mis ofertas (SELLER)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/me/{{productId}}/offers",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Crear oferta (SELLER)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/products/me/{{productId}}/offers",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"discountPercent\": 15.00,\n  \"startsAt\": \"2026-05-20T00:00:00\",\n  \"endsAt\": \"2026-05-31T23:59:59\"\n}" }
+          }
+        },
+        {
+          "name": "Eliminar oferta (SELLER)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/me/{{productId}}/offers/OFFER_ID",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analíticas",
+      "item": [
+        {
+          "name": "Dashboard vendedor",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/analytics/seller",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Dashboard admin",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/analytics/admin",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Admin — Vendedores",
+      "item": [
+        {
+          "name": "Listar vendedores pendientes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/sellers",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Aprobar vendedor",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/admin/sellers/{{sellerId}}/approve",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Suspender vendedor",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/admin/sellers/{{sellerId}}/suspend",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    }
+  ]
+}

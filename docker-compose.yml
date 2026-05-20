@@ -1,0 +1,30 @@
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: neogaming-postgres
+    environment:
+      POSTGRES_DB: neogaming
+      POSTGRES_USER: neogaming
+      POSTGRES_PASSWORD: neogaming
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neogaming -d neogaming"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: neogaming-mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI — http://localhost:8025
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

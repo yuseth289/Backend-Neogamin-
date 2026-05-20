@@ -1,0 +1,34 @@
+# Build
+target/
+*.jar
+*.war
+*.class
+
+# Maven
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Environment (nunca commitear)
+.env
+.env.local
+
+# Claude Code (configuración local)
+.claude/
+
+# The Architect (proyecto separado, no va en este repo)
+the-architect/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
