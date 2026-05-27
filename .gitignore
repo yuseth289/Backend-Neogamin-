@@ -5,8 +5,9 @@ target/
 *.class
 
 # Maven
-.mvn/
-!.mvn/wrapper/maven-wrapper.jar
+!.mvn/
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
 
 # IDE
 .idea/
