@@ -1,0 +1,24 @@
+package com.neogaming.wishlist.dto;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * DTO de salida con los datos de un producto en una lista de deseos.
+ * Incluye información básica del producto para mostrar en la lista.
+ */
+public record WishlistItemResponse(
+        UUID itemId,
+        UUID productId,
+        String productName,
+        String productSlug,
+        String productImageUrl,
+        BigDecimal finalPrice,
+        boolean inStock,
+        Instant addedAt,
+        /** Precio al momento de agregar — null si se agregó antes de esta funcionalidad */
+        BigDecimal priceAtAdding,
+        /** true si el precio actual es menor que el precio al agregar (¡bajó de precio!) */
+        boolean onSale
+) {}
