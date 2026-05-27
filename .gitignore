@@ -19,7 +19,7 @@ target/
 .env
 .env.local
 
-# Claude Code (configuración local)
+# Claude Code (configuración local; las skills compartidas van en .agents/skills/)
 .claude/
 
 # The Architect (proyecto separado, no va en este repo)
