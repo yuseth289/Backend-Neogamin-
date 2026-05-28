@@ -50,7 +50,7 @@ public class AdminSellerController {
             description = "Retorna vendedores paginados filtrados por estado. Por defecto muestra los PENDIENTES."
     )
     public ResponseEntity<ApiResponse<PageResponse<SellerResponse>>> listar(
-            @RequestParam(defaultValue = "PENDING") EstadoGenerico status,
+            @RequestParam(required = false) EstadoGenerico status,
             @PageableDefault(size = 20) Pageable pageable) {
 
         PageResponse<SellerResponse> page = sellerService.listarPorEstado(status, pageable);
