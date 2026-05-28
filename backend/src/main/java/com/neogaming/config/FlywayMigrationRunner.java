@@ -37,6 +37,11 @@ public class FlywayMigrationRunner implements ApplicationRunner {
         Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
+                // Si el schema ya tiene tablas pero no tiene flyway_schema_history
+                // (DB existente de Hibernate), crear el historial baseline en la
+                // última versión conocida en lugar de fallar.
+                .baselineOnMigrate(true)
+                .baselineVersion("999")
                 .load();
         flyway.repair();
         MigrateResult result = flyway.migrate();
