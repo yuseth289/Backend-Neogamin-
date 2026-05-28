@@ -63,13 +63,14 @@ public class ProductService {
      * @return Página de productos activos
      */
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> listarCatalogoPublico(Pageable pageable) {
-        Page<ProductSummaryResponse> page = productRepository
-                .findByStatus(EstadoProducto.ACTIVE, pageable)
-                .map(p -> {
-                    String urlPrincipal = obtenerUrlImagenPrincipal(p.getId());
-                    return productMapper.toSummaryResponse(p, urlPrincipal);
-                });
+    public PageResponse<ProductSummaryResponse> listarCatalogoPublico(UUID sellerId, Pageable pageable) {
+        Page<Product> raw = sellerId != null
+                ? productRepository.findBySellerIdAndStatus(sellerId, EstadoProducto.ACTIVE, pageable)
+                : productRepository.findByStatus(EstadoProducto.ACTIVE, pageable);
+        Page<ProductSummaryResponse> page = raw.map(p -> {
+            String urlPrincipal = obtenerUrlImagenPrincipal(p.getId());
+            return productMapper.toSummaryResponse(p, urlPrincipal);
+        });
         return PageResponse.from(page);
     }
 

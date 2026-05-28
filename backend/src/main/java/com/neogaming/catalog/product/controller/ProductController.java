@@ -58,10 +58,11 @@ public class ProductController {
     // ===== CATÁLOGO PÚBLICO =====
 
     @GetMapping
-    @Operation(summary = "Listar catálogo", description = "Retorna todos los productos activos del catálogo con paginación.")
+    @Operation(summary = "Listar catálogo", description = "Retorna productos activos con paginación. Filtra por sellerId si se provee.")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> listarCatalogo(
+            @RequestParam(required = false) UUID sellerId,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.listarCatalogoPublico(pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.listarCatalogoPublico(sellerId, pageable)));
     }
 
     @GetMapping("/search")
