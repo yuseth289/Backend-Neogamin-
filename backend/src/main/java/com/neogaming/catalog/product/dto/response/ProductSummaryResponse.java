@@ -29,6 +29,9 @@ public record ProductSummaryResponse(
 
         EstadoProducto status,
 
+        /** Unidades disponibles (null si aún no se ha inicializado inventario) */
+        Integer availableStock,
+
         /** URL de la imagen principal. null si no tiene imágenes. */
         String primaryImageUrl
 ) {}
