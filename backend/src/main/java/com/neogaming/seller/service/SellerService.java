@@ -1,6 +1,7 @@
 package com.neogaming.seller.service;
 
 import com.neogaming.common.enums.EstadoGenerico;
+import com.neogaming.common.enums.RolUsuario;
 import com.neogaming.common.exception.BusinessRuleException;
 import com.neogaming.common.exception.ResourceNotFoundException;
 import com.neogaming.common.response.PageResponse;
@@ -18,6 +19,7 @@ import com.neogaming.order.repository.OrderItemRepository;
 import com.neogaming.review.repository.ReviewRepository;
 import com.neogaming.seller.repository.PaymentAccountRepository;
 import com.neogaming.seller.repository.SellerRepository;
+import com.neogaming.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +56,7 @@ public class SellerService {
     private final ReviewRepository reviewRepository;
     private final OrderItemRepository orderItemRepository;
     private final com.neogaming.seller.repository.FollowedSellerRepository followedSellerRepository;
+    private final UserRepository userRepository;
 
     // ===== OPERACIONES DEL VENDEDOR =====
 
@@ -348,7 +351,14 @@ public class SellerService {
         }
 
         seller.setStatus(EstadoGenerico.ACTIVE);
-        return sellerMapper.toResponse(sellerRepository.save(seller));
+        sellerRepository.save(seller);
+
+        userRepository.findById(seller.getUserId()).ifPresent(user -> {
+            user.setRole(RolUsuario.SELLER);
+            userRepository.save(user);
+        });
+
+        return sellerMapper.toResponse(seller);
     }
 
     /**
