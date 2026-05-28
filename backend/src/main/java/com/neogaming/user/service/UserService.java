@@ -1,7 +1,10 @@
 package com.neogaming.user.service;
 
+import com.neogaming.common.enums.EstadoGenerico;
+import com.neogaming.common.enums.RolUsuario;
 import com.neogaming.common.exception.BusinessRuleException;
 import com.neogaming.common.exception.ResourceNotFoundException;
+import com.neogaming.common.response.PageResponse;
 import com.neogaming.user.domain.User;
 import com.neogaming.user.dto.request.ChangePasswordRequest;
 import com.neogaming.user.dto.request.UpdateProfileRequest;
@@ -9,6 +12,7 @@ import com.neogaming.user.dto.response.UserResponse;
 import com.neogaming.user.mapper.UserMapper;
 import com.neogaming.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,5 +113,35 @@ public class UserService {
         // Guardar el nuevo hash BCrypt
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
+    }
+
+    // ── Admin ────────────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public PageResponse<UserResponse> listarUsuarios(EstadoGenerico status, Pageable pageable) {
+        var page = (status != null)
+                ? userRepository.findByRoleNotAndStatus(RolUsuario.ADMIN, status, pageable)
+                : userRepository.findByRoleNot(RolUsuario.ADMIN, pageable);
+        return PageResponse.from(page.map(userMapper::toResponse));
+    }
+
+    public UserResponse suspenderUsuario(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", id.toString()));
+        if (user.getStatus() == EstadoGenerico.SUSPENDED) {
+            throw new BusinessRuleException("El usuario ya está suspendido", "USUARIO_YA_SUSPENDIDO");
+        }
+        user.setStatus(EstadoGenerico.SUSPENDED);
+        return userMapper.toResponse(userRepository.save(user));
+    }
+
+    public UserResponse reactivarUsuario(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", id.toString()));
+        if (user.getStatus() != EstadoGenerico.SUSPENDED) {
+            throw new BusinessRuleException("El usuario no está suspendido", "USUARIO_NO_SUSPENDIDO");
+        }
+        user.setStatus(EstadoGenerico.ACTIVE);
+        return userMapper.toResponse(userRepository.save(user));
     }
 }
