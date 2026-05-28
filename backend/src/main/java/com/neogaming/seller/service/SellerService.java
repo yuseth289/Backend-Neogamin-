@@ -324,8 +324,9 @@ public class SellerService {
      */
     @Transactional(readOnly = true)
     public PageResponse<SellerResponse> listarPorEstado(EstadoGenerico status, Pageable pageable) {
-        Page<SellerResponse> page = sellerRepository
-                .findByStatus(status, pageable)
+        Page<SellerResponse> page = (status != null
+                ? sellerRepository.findByStatus(status, pageable)
+                : sellerRepository.findAll(pageable))
                 .map(sellerMapper::toResponse);
         return PageResponse.from(page);
     }
