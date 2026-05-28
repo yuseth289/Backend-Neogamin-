@@ -21,13 +21,17 @@ public class Conversation extends AuditableEntity {
     @Column(name = "buyer_id", nullable = false)
     private UUID buyerId;
 
-    /** User.id del vendedor */
-    @Column(name = "seller_user_id", nullable = false)
+    /** User.id del vendedor (null en conversaciones directas admin→usuario) */
+    @Column(name = "seller_user_id")
     private UUID sellerUserId;
 
-    /** Seller.id (para mostrar nombre/logo de tienda) */
-    @Column(name = "seller_id", nullable = false)
+    /** Seller.id — null en conversaciones directas admin→usuario */
+    @Column(name = "seller_id")
     private UUID sellerId;
+
+    /** User.id del destinatario en conversaciones directas iniciadas por el admin */
+    @Column(name = "direct_user_id")
+    private UUID directUserId;
 
     /** Producto que originó la conversación (opcional) */
     @Column(name = "product_id")
