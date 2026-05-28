@@ -280,6 +280,13 @@ public class InventoryService {
      * @param referenceId  UUID del documento relacionado (puede ser null)
      * @param notes        Descripción del movimiento
      */
+    @Transactional(readOnly = true)
+    public Integer obtenerStockDisponible(UUID productId) {
+        return inventoryRepository.findByProductId(productId)
+                .map(inv -> inv.getPhysicalStock() - inv.getReservedStock())
+                .orElse(null);
+    }
+
     private void registrarMovimiento(Inventory inventory, TipoMovimientoStock tipo,
                                      int cantidad, UUID referenceId, String notes) {
         InventoryMovement movement = InventoryMovement.builder()

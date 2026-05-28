@@ -30,6 +30,10 @@ public class ProductMapper {
      * @return DTO completo del producto
      */
     public ProductResponse toResponse(Product product, List<ProductImage> images) {
+        return toResponse(product, images, null);
+    }
+
+    public ProductResponse toResponse(Product product, List<ProductImage> images, Integer availableStock) {
         List<ProductImageResponse> imageResponses = images.stream()
                 .map(this::toImageResponse)
                 .toList();
@@ -47,6 +51,7 @@ public class ProductMapper {
                 product.getIvaPercent(),
                 calcularPrecioFinal(product.getBasePrice(), product.getIvaPercent()),
                 product.getStatus(),
+                availableStock,
                 imageResponses,
                 product.getCreatedAt(),
                 product.getUpdatedAt()
@@ -62,6 +67,10 @@ public class ProductMapper {
      * @return DTO resumido para tarjeta de producto
      */
     public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl) {
+        return toSummaryResponse(product, primaryImageUrl, null);
+    }
+
+    public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl, Integer availableStock) {
         return new ProductSummaryResponse(
                 product.getId(),
                 product.getSellerId(),
@@ -72,6 +81,7 @@ public class ProductMapper {
                 product.getBasePrice(),
                 calcularPrecioFinal(product.getBasePrice(), product.getIvaPercent()),
                 product.getStatus(),
+                availableStock,
                 primaryImageUrl
         );
     }

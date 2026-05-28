@@ -50,6 +50,9 @@ public record ProductResponse(
 
         EstadoProducto status,
 
+        /** Unidades disponibles para compra (physicalStock - reservedStock) */
+        Integer availableStock,
+
         /** Imágenes del producto ordenadas (principal primero) */
         List<ProductImageResponse> images,
 

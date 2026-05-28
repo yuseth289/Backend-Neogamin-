@@ -127,7 +127,8 @@ public class ProductService {
         List<ProductImage> images = productImageRepository
                 .findByProductIdOrderByPrimaryDescSortOrderAsc(product.getId());
 
-        return productMapper.toResponse(product, images);
+        Integer availableStock = inventoryService.obtenerStockDisponible(product.getId());
+        return productMapper.toResponse(product, images, availableStock);
     }
 
     // ===== GESTIÓN DEL VENDEDOR =====
