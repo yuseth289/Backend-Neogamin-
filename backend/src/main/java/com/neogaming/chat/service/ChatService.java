@@ -43,10 +43,32 @@ public class ChatService {
         if (mySeller != null) {
             convs = conversationRepo.findBySellerIdOrderByLastMessageAtDesc(mySeller.getId());
         } else {
-            convs = conversationRepo.findByBuyerIdOrderByLastMessageAtDesc(currentUserId);
+            List<Conversation> buyerConvs = conversationRepo.findByBuyerIdOrderByLastMessageAtDesc(currentUserId);
+            List<Conversation> directConvs = conversationRepo.findByDirectUserIdOrderByLastMessageAtDesc(currentUserId);
+            convs = new java.util.ArrayList<>(buyerConvs);
+            convs.addAll(directConvs);
+            convs.sort(java.util.Comparator.comparing(
+                    Conversation::getLastMessageAt, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())));
         }
 
         return convs.stream().map(c -> toConversationResponse(c, currentUserId, mySeller)).toList();
+    }
+
+    public ConversationResponse adminStartConversation(UUID targetUserId, String firstMessage, UUID adminId) {
+        userRepo.findById(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario", targetUserId.toString()));
+
+        Conversation conv = conversationRepo
+                .findByBuyerIdAndDirectUserId(adminId, targetUserId)
+                .orElseGet(() -> conversationRepo.save(Conversation.builder()
+                        .buyerId(adminId)
+                        .directUserId(targetUserId)
+                        .lastMessageAt(Instant.now())
+                        .build()));
+
+        sendMessage(conv.getId(), new SendMessageRequest(firstMessage), adminId);
+        conv = conversationRepo.findById(conv.getId()).orElseThrow();
+        return toConversationResponse(conv, adminId, null);
     }
 
     public ConversationResponse startConversation(StartConversationRequest req, UUID buyerId) {
@@ -97,7 +119,9 @@ public class ChatService {
     public MessageResponse sendMessage(UUID convId, SendMessageRequest req, UUID senderId) {
         Conversation conv = getAndValidate(convId, senderId);
         Seller mySeller = sellerRepo.findByUserId(senderId).orElse(null);
-        RolMensaje role = (mySeller != null && mySeller.getId().equals(conv.getSellerId()))
+        boolean isDirectRecipient = conv.getDirectUserId() != null && conv.getDirectUserId().equals(senderId);
+        RolMensaje role = (isDirectRecipient
+                || (mySeller != null && conv.getSellerId() != null && mySeller.getId().equals(conv.getSellerId())))
                 ? RolMensaje.SELLER : RolMensaje.BUYER;
 
         ChatMessage msg = messageRepo.save(ChatMessage.builder()
@@ -134,7 +158,9 @@ public class ChatService {
 
     private void markRead(Conversation conv, UUID userId) {
         Seller mySeller = sellerRepo.findByUserId(userId).orElse(null);
-        boolean isSeller = mySeller != null && mySeller.getId().equals(conv.getSellerId());
+        boolean isDirectRecipient = conv.getDirectUserId() != null && conv.getDirectUserId().equals(userId);
+        boolean isSeller = isDirectRecipient
+                || (mySeller != null && conv.getSellerId() != null && mySeller.getId().equals(conv.getSellerId()));
         if (isSeller) {
             messageRepo.markReadBySeller(conv.getId());
             conv.setUnreadSeller(0);
@@ -150,21 +176,43 @@ public class ChatService {
                 .orElseThrow(() -> new ResourceNotFoundException("Conversación", convId.toString()));
         Seller mySeller = sellerRepo.findByUserId(userId).orElse(null);
         boolean isBuyer = conv.getBuyerId().equals(userId);
-        boolean isSeller = mySeller != null && mySeller.getId().equals(conv.getSellerId());
-        if (!isBuyer && !isSeller) throw new ForbiddenException("No tienes acceso a esta conversación");
+        boolean isSeller = mySeller != null && conv.getSellerId() != null && mySeller.getId().equals(conv.getSellerId());
+        boolean isDirectRecipient = conv.getDirectUserId() != null && conv.getDirectUserId().equals(userId);
+        if (!isBuyer && !isSeller && !isDirectRecipient)
+            throw new ForbiddenException("No tienes acceso a esta conversación");
         return conv;
     }
 
     private ConversationResponse toConversationResponse(Conversation c, UUID currentUserId, Seller mySeller) {
         User buyer = userRepo.findById(c.getBuyerId()).orElse(null);
-        Seller seller = sellerRepo.findById(c.getSellerId()).orElse(null);
-        boolean isSeller = mySeller != null && mySeller.getId().equals(c.getSellerId());
-        int unread = isSeller ? c.getUnreadSeller() : c.getUnreadBuyer();
+        Seller seller = (c.getSellerId() != null) ? sellerRepo.findById(c.getSellerId()).orElse(null) : null;
+
+        boolean isDirectRecipient = c.getDirectUserId() != null && c.getDirectUserId().equals(currentUserId);
+        boolean isSellerSide = isDirectRecipient
+                || (mySeller != null && c.getSellerId() != null && mySeller.getId().equals(c.getSellerId()));
+        int unread = isSellerSide ? c.getUnreadSeller() : c.getUnreadBuyer();
+
+        String displayName;
+        String storeSlug = null;
+        String storeLogoUrl = null;
+        if (seller != null) {
+            displayName  = seller.getStoreName();
+            storeSlug    = seller.getStoreSlug();
+            storeLogoUrl = seller.getStoreLogoUrl();
+        } else if (c.getDirectUserId() != null) {
+            if (isDirectRecipient) {
+                displayName = "Soporte NeoGaming";
+            } else {
+                User target = userRepo.findById(c.getDirectUserId()).orElse(null);
+                displayName = target != null ? target.getFirstName() + " " + target.getLastName() : "Usuario";
+            }
+        } else {
+            displayName = "Tienda";
+        }
 
         String productName = null;
         if (c.getProductId() != null) {
-            productName = productRepo.findById(c.getProductId())
-                    .map(Product::getName).orElse(null);
+            productName = productRepo.findById(c.getProductId()).map(Product::getName).orElse(null);
         }
 
         return new ConversationResponse(
@@ -172,9 +220,9 @@ public class ChatService {
                 c.getBuyerId(),
                 buyer != null ? buyer.getFirstName() + " " + buyer.getLastName() : "Usuario",
                 c.getSellerId(),
-                seller != null ? seller.getStoreName() : "Tienda",
-                seller != null ? seller.getStoreSlug() : null,
-                seller != null ? seller.getStoreLogoUrl() : null,
+                displayName,
+                storeSlug,
+                storeLogoUrl,
                 c.getProductId(),
                 productName,
                 c.getLastMessage(),
