@@ -88,4 +88,14 @@ public class AdminSellerController {
         SellerResponse response = sellerService.suspender(id);
         return ResponseEntity.ok(ApiResponse.ok("Vendedor suspendido", response));
     }
+
+    @PatchMapping("/{id}/reactivate")
+    @Operation(
+            summary = "Reactivar vendedor",
+            description = "Reactiva un vendedor suspendido. Sus productos vuelven a aparecer en el catálogo."
+    )
+    public ResponseEntity<ApiResponse<SellerResponse>> reactivar(@PathVariable UUID id) {
+        SellerResponse response = sellerService.reactivar(id);
+        return ResponseEntity.ok(ApiResponse.ok("Vendedor reactivado correctamente", response));
+    }
 }

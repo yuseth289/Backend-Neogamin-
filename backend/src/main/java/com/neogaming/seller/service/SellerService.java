@@ -385,6 +385,26 @@ public class SellerService {
         return sellerMapper.toResponse(sellerRepository.save(seller));
     }
 
+    public SellerResponse reactivar(UUID sellerId) {
+        Seller seller = sellerRepository.findById(sellerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Vendedor", sellerId.toString()));
+
+        if (seller.getStatus() != EstadoGenerico.SUSPENDED) {
+            throw new BusinessRuleException(
+                    "Solo se pueden reactivar vendedores suspendidos",
+                    "ESTADO_INVALIDO_PARA_REACTIVAR"
+            );
+        }
+
+        seller.setStatus(EstadoGenerico.ACTIVE);
+        userRepository.findById(seller.getUserId()).ifPresent(user -> {
+            user.setRole(RolUsuario.SELLER);
+            userRepository.save(user);
+        });
+
+        return sellerMapper.toResponse(seller);
+    }
+
     // ===== MÉTODOS AUXILIARES =====
 
     /**
