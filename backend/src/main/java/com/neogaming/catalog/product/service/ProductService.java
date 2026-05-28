@@ -142,8 +142,9 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> listarMisProductos(
-            UUID sellerId, EstadoProducto status, Pageable pageable) {
+            UUID userId, EstadoProducto status, Pageable pageable) {
 
+        UUID sellerId = resolverSellerId(userId);
         Page<ProductSummaryResponse> page = productRepository
                 .findBySellerIdAndStatus(sellerId, status, pageable)
                 .map(p -> {
@@ -161,7 +162,8 @@ public class ProductService {
      * @return Detalle completo del producto
      */
     @Transactional(readOnly = true)
-    public ProductResponse obtenerMiProducto(UUID productId, UUID sellerId) {
+    public ProductResponse obtenerMiProducto(UUID productId, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         Product product = buscarPorIdYVendedor(productId, sellerId);
         List<ProductImage> images = productImageRepository
                 .findByProductIdOrderByPrimaryDescSortOrderAsc(productId);
@@ -178,15 +180,16 @@ public class ProductService {
      * @return El producto recién creado en estado DRAFT
      * @throws BusinessRuleException si el vendedor no está activo
      */
-    public ProductResponse crear(ProductRequest request, UUID sellerId) {
+    public ProductResponse crear(ProductRequest request, UUID userId) {
         // Verificar que el vendedor está activo (aprobado por admin)
-        sellerRepository.findByUserId(sellerId)
+        com.neogaming.seller.domain.Seller seller = sellerRepository.findByUserId(userId)
                 .filter(s -> s.getStatus().name().equals("ACTIVE"))
                 .orElseThrow(() -> new BusinessRuleException(
                         "Tu perfil de vendedor debe estar aprobado para crear productos",
                         "VENDEDOR_NO_ACTIVO"
                 ));
 
+        UUID sellerId = seller.getId();
         String slug = generarSlugUnico(request.name(), sellerId);
         BigDecimal ivaPercent = request.ivaPercent() != null
                 ? request.ivaPercent()
@@ -221,7 +224,8 @@ public class ProductService {
      * @param sellerId  UUID del vendedor
      * @return El producto actualizado
      */
-    public ProductResponse actualizar(UUID productId, ProductRequest request, UUID sellerId) {
+    public ProductResponse actualizar(UUID productId, ProductRequest request, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         Product product = buscarPorIdYVendedor(productId, sellerId);
 
         if (product.getStatus() == EstadoProducto.DELETED) {
@@ -256,7 +260,8 @@ public class ProductService {
      * @param sellerId  UUID del vendedor
      * @return El producto en estado ACTIVE
      */
-    public ProductResponse publicar(UUID productId, UUID sellerId) {
+    public ProductResponse publicar(UUID productId, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         Product product = buscarPorIdYVendedor(productId, sellerId);
 
         if (product.getStatus() == EstadoProducto.ACTIVE) {
@@ -286,7 +291,8 @@ public class ProductService {
      * @param sellerId  UUID del vendedor
      * @return El producto en estado PAUSED
      */
-    public ProductResponse pausar(UUID productId, UUID sellerId) {
+    public ProductResponse pausar(UUID productId, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         Product product = buscarPorIdYVendedor(productId, sellerId);
 
         if (product.getStatus() != EstadoProducto.ACTIVE) {
@@ -309,7 +315,8 @@ public class ProductService {
      * @param productId UUID del producto
      * @param sellerId  UUID del vendedor
      */
-    public void eliminar(UUID productId, UUID sellerId) {
+    public void eliminar(UUID productId, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         Product product = buscarPorIdYVendedor(productId, sellerId);
 
         if (product.getStatus() == EstadoProducto.DELETED) {
@@ -336,7 +343,8 @@ public class ProductService {
      * @return La imagen recién agregada
      * @throws BusinessRuleException si se supera el límite de imágenes
      */
-    public ProductImageResponse agregarImagen(UUID productId, ProductImageRequest request, UUID sellerId) {
+    public ProductImageResponse agregarImagen(UUID productId, ProductImageRequest request, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         buscarPorIdYVendedor(productId, sellerId);  // Validar propiedad
 
         long totalImagenes = productImageRepository.countByProductId(productId);
@@ -370,7 +378,8 @@ public class ProductService {
      * @param sellerId  UUID del vendedor
      * @return La imagen marcada como principal
      */
-    public ProductImageResponse establecerImagenPrincipal(UUID productId, UUID imageId, UUID sellerId) {
+    public ProductImageResponse establecerImagenPrincipal(UUID productId, UUID imageId, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         buscarPorIdYVendedor(productId, sellerId);  // Validar propiedad
 
         ProductImage image = productImageRepository
@@ -394,7 +403,8 @@ public class ProductService {
      * @param imageId   UUID de la imagen a eliminar
      * @param sellerId  UUID del vendedor
      */
-    public void eliminarImagen(UUID productId, UUID imageId, UUID sellerId) {
+    public void eliminarImagen(UUID productId, UUID imageId, UUID userId) {
+        UUID sellerId = resolverSellerId(userId);
         buscarPorIdYVendedor(productId, sellerId);  // Validar propiedad
 
         ProductImage image = productImageRepository
@@ -425,6 +435,15 @@ public class ProductService {
      * @return La entidad Product si existe y pertenece al vendedor
      * @throws ResourceNotFoundException si no existe o no pertenece al vendedor
      */
+    private UUID resolverSellerId(UUID userId) {
+        return sellerRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "No tienes un perfil de vendedor activo",
+                        "VENDEDOR_NO_ENCONTRADO"
+                ))
+                .getId();
+    }
+
     private Product buscarPorIdYVendedor(UUID productId, UUID sellerId) {
         return productRepository.findByIdAndSellerId(productId, sellerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto", productId.toString()));
