@@ -19,8 +19,7 @@ spring:
         format_sql: false
 
   flyway:
-    enabled: true
-    repair-on-migrate: true
+    enabled: false
 
   data:
     redis:
