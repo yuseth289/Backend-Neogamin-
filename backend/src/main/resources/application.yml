@@ -20,6 +20,7 @@ spring:
 
   flyway:
     enabled: true
+    repair-on-migrate: true
 
   data:
     redis:
