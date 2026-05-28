@@ -85,6 +85,7 @@ public class SecurityConfig {
                         // ── Catálogo público (lectura) ──
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/brands/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/sellers/{storeSlug}").permitAll()
 
                         // ── Imágenes subidas por vendedores ──
