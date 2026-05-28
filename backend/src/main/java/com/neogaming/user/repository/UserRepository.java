@@ -1,6 +1,10 @@
 package com.neogaming.user.repository;
 
+import com.neogaming.common.enums.EstadoGenerico;
+import com.neogaming.common.enums.RolUsuario;
 import com.neogaming.user.domain.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -34,4 +38,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return true si el email ya está en uso
      */
     boolean existsByEmail(String email);
+
+    Page<User> findByRoleNot(RolUsuario role, Pageable pageable);
+
+    Page<User> findByRoleNotAndStatus(RolUsuario role, EstadoGenerico status, Pageable pageable);
 }
