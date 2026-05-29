@@ -49,5 +49,8 @@ public record ProductRequest(
          */
         @DecimalMin(value = "0.0", message = "El IVA no puede ser negativo")
         @DecimalMax(value = "100.0", message = "El IVA no puede superar el 100%")
-        BigDecimal ivaPercent
+        BigDecimal ivaPercent,
+
+        /** Características del producto como pares clave-valor (ej: {"Color":"Negro","Conectividad":"USB-C"}) */
+        java.util.Map<String, String> specifications
 ) {}
