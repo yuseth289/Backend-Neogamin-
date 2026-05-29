@@ -54,15 +54,14 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
      */
     Page<Product> findByStatus(EstadoProducto status, Pageable pageable);
 
+    Page<Product> findByStatusAndBrandIgnoreCaseIn(EstadoProducto status, java.util.Collection<String> brands, Pageable pageable);
+
     /**
      * Lista productos activos filtrados por categoría para el catálogo público.
-     *
-     * @param categoryId UUID de la categoría
-     * @param status     Estado (ACTIVE)
-     * @param pageable   Paginación
-     * @return Página de productos de la categoría
      */
     Page<Product> findByCategoryIdAndStatus(UUID categoryId, EstadoProducto status, Pageable pageable);
+
+    Page<Product> findByCategoryIdAndStatusAndBrandIgnoreCaseIn(UUID categoryId, EstadoProducto status, java.util.Collection<String> brands, Pageable pageable);
 
     /**
      * Búsqueda de texto completo en nombre y descripción del producto.
@@ -81,6 +80,16 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                  OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :query, '%')))
             """)
     Page<Product> buscarPorTextoYEstado(String query, EstadoProducto status, Pageable pageable);
+
+    @Query("""
+            SELECT p FROM Product p
+            WHERE p.status = :status
+            AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%'))
+                 OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%'))
+                 OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :query, '%')))
+            AND LOWER(p.brand) IN :brands
+            """)
+    Page<Product> buscarPorTextoEstadoYMarcas(String query, EstadoProducto status, java.util.List<String> brands, Pageable pageable);
 
     /**
      * Busca un producto verificando que pertenece al vendedor.

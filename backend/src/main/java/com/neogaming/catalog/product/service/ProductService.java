@@ -63,50 +63,40 @@ public class ProductService {
      * @return Página de productos activos
      */
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> listarCatalogoPublico(UUID sellerId, Pageable pageable) {
-        Page<Product> raw = sellerId != null
-                ? productRepository.findBySellerIdAndStatus(sellerId, EstadoProducto.ACTIVE, pageable)
-                : productRepository.findByStatus(EstadoProducto.ACTIVE, pageable);
-        Page<ProductSummaryResponse> page = raw.map(p -> {
-            String urlPrincipal = obtenerUrlImagenPrincipal(p.getId());
-            return productMapper.toSummaryResponse(p, urlPrincipal);
-        });
-        return PageResponse.from(page);
+    public PageResponse<ProductSummaryResponse> listarCatalogoPublico(UUID sellerId, List<String> brands, Pageable pageable) {
+        Page<Product> raw;
+        boolean hasBrands = brands != null && !brands.isEmpty();
+        if (sellerId != null) {
+            raw = productRepository.findBySellerIdAndStatus(sellerId, EstadoProducto.ACTIVE, pageable);
+        } else if (hasBrands) {
+            List<String> brandLower = brands.stream().map(String::toLowerCase).toList();
+            raw = productRepository.findByStatusAndBrandIgnoreCaseIn(EstadoProducto.ACTIVE, brandLower, pageable);
+        } else {
+            raw = productRepository.findByStatus(EstadoProducto.ACTIVE, pageable);
+        }
+        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()))));
     }
 
-    /**
-     * Lista productos activos filtrados por categoría.
-     *
-     * @param categoryId UUID de la categoría
-     * @param pageable   Paginación
-     * @return Página de productos de esa categoría
-     */
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> listarPorCategoria(UUID categoryId, Pageable pageable) {
-        Page<ProductSummaryResponse> page = productRepository
-                .findByCategoryIdAndStatus(categoryId, EstadoProducto.ACTIVE, pageable)
-                .map(p -> {
-                    String urlPrincipal = obtenerUrlImagenPrincipal(p.getId());
-                    return productMapper.toSummaryResponse(p, urlPrincipal);
-                });
-        return PageResponse.from(page);
+    public PageResponse<ProductSummaryResponse> listarPorCategoria(UUID categoryId, List<String> brands, Pageable pageable) {
+        boolean hasBrands = brands != null && !brands.isEmpty();
+        Page<Product> raw = hasBrands
+                ? productRepository.findByCategoryIdAndStatusAndBrandIgnoreCaseIn(
+                        categoryId, EstadoProducto.ACTIVE,
+                        brands.stream().map(String::toLowerCase).toList(), pageable)
+                : productRepository.findByCategoryIdAndStatus(categoryId, EstadoProducto.ACTIVE, pageable);
+        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()))));
     }
 
-    /**
-     * Busca productos por texto en nombre, descripción y marca.
-     *
-     * @param query    Texto a buscar
-     * @param pageable Paginación
-     * @return Página de productos que coinciden con la búsqueda
-     */
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> buscar(String query, Pageable pageable) {
-        Page<ProductSummaryResponse> page = productRepository
-                .buscarPorTextoYEstado(query, EstadoProducto.ACTIVE, pageable)
-                .map(p -> {
-                    String urlPrincipal = obtenerUrlImagenPrincipal(p.getId());
-                    return productMapper.toSummaryResponse(p, urlPrincipal);
-                });
+    public PageResponse<ProductSummaryResponse> buscar(String query, List<String> brands, Pageable pageable) {
+        boolean hasBrands = brands != null && !brands.isEmpty();
+        Page<ProductSummaryResponse> page = (hasBrands
+                ? productRepository.buscarPorTextoEstadoYMarcas(
+                        query, EstadoProducto.ACTIVE,
+                        brands.stream().map(String::toLowerCase).toList(), pageable)
+                : productRepository.buscarPorTextoYEstado(query, EstadoProducto.ACTIVE, pageable))
+                .map(p -> productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId())));
         return PageResponse.from(page);
     }
 
