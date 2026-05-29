@@ -207,6 +207,7 @@ public class ProductService {
                 .sku(request.sku())
                 .basePrice(request.basePrice())
                 .ivaPercent(ivaPercent)
+                .specifications(request.specifications() != null ? request.specifications() : new java.util.HashMap<>())
                 .status(EstadoProducto.DRAFT)
                 .build();
 
@@ -248,6 +249,7 @@ public class ProductService {
         if (request.categoryId() != null) product.setCategoryId(request.categoryId());
         if (request.basePrice() != null) product.setBasePrice(request.basePrice());
         if (request.ivaPercent() != null) product.setIvaPercent(request.ivaPercent());
+        if (request.specifications() != null) product.setSpecifications(request.specifications());
 
         List<ProductImage> images = productImageRepository
                 .findByProductIdOrderByPrimaryDescSortOrderAsc(productId);

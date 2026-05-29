@@ -5,6 +5,7 @@ import com.neogaming.common.enums.EstadoProducto;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -57,5 +58,8 @@ public record ProductResponse(
         List<ProductImageResponse> images,
 
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+
+        /** Características del producto como pares clave-valor */
+        Map<String, String> specifications
 ) {}

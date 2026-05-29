@@ -4,8 +4,12 @@ import com.neogaming.common.audit.AuditableEntity;
 import com.neogaming.common.enums.EstadoProducto;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -106,4 +110,9 @@ public class Product extends AuditableEntity {
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
     private EstadoProducto status = EstadoProducto.DRAFT;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "specifications", columnDefinition = "jsonb")
+    @Builder.Default
+    private Map<String, String> specifications = new HashMap<>();
 }

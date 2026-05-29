@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -54,7 +55,8 @@ public class ProductMapper {
                 availableStock,
                 imageResponses,
                 product.getCreatedAt(),
-                product.getUpdatedAt()
+                product.getUpdatedAt(),
+                product.getSpecifications() != null ? product.getSpecifications() : new HashMap<>()
         );
     }
 
