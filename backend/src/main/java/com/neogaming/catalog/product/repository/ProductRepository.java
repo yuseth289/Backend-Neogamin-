@@ -91,4 +91,12 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
      * @return El producto si existe y pertenece al vendedor
      */
     Optional<Product> findByIdAndSellerId(UUID id, UUID sellerId);
+
+    @Query("""
+            SELECT p FROM Product p
+            WHERE p.sellerId = :sellerId
+            AND p.status != com.neogaming.common.enums.EstadoProducto.DELETED
+            AND LOWER(p.name) LIKE LOWER(CONCAT('%', :q, '%'))
+            """)
+    Page<Product> buscarPorSellerYNombre(UUID sellerId, String q, Pageable pageable);
 }
