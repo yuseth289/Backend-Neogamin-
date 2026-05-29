@@ -58,27 +58,30 @@ public class ProductController {
     // ===== CATÁLOGO PÚBLICO =====
 
     @GetMapping
-    @Operation(summary = "Listar catálogo", description = "Retorna productos activos con paginación. Filtra por sellerId si se provee.")
+    @Operation(summary = "Listar catálogo", description = "Retorna productos activos. Filtra por sellerId y/o brand[].")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> listarCatalogo(
             @RequestParam(required = false) UUID sellerId,
+            @RequestParam(required = false) java.util.List<String> brand,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.listarCatalogoPublico(sellerId, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.listarCatalogoPublico(sellerId, brand, pageable)));
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Buscar productos", description = "Búsqueda de texto en nombre, descripción y marca del producto.")
+    @Operation(summary = "Buscar productos", description = "Búsqueda de texto con filtro opcional por brand[].")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> buscar(
             @RequestParam String q,
+            @RequestParam(required = false) java.util.List<String> brand,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.buscar(q, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.buscar(q, brand, pageable)));
     }
 
     @GetMapping("/category/{categoryId}")
-    @Operation(summary = "Productos por categoría", description = "Lista productos activos de una categoría específica.")
+    @Operation(summary = "Productos por categoría", description = "Lista productos activos de una categoría con filtro opcional por brand[].")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> listarPorCategoria(
             @PathVariable UUID categoryId,
+            @RequestParam(required = false) java.util.List<String> brand,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.listarPorCategoria(categoryId, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.listarPorCategoria(categoryId, brand, pageable)));
     }
 
     @GetMapping("/{slug}")
