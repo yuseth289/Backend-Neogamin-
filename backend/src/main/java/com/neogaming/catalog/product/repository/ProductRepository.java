@@ -92,6 +92,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
      */
     Optional<Product> findByIdAndSellerId(UUID id, UUID sellerId);
 
+    Page<Product> findBySellerIdAndStatusNot(UUID sellerId, EstadoProducto status, Pageable pageable);
+
     @Query("""
             SELECT p FROM Product p
             WHERE p.sellerId = :sellerId

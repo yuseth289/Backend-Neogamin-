@@ -154,7 +154,9 @@ public class ProductService {
         UUID sellerId = resolverSellerId(userId);
         Page<ProductSummaryResponse> page = (q != null && !q.isBlank()
                 ? productRepository.buscarPorSellerYNombre(sellerId, q, pageable)
-                : productRepository.findBySellerIdAndStatus(sellerId, status, pageable))
+                : status != null
+                    ? productRepository.findBySellerIdAndStatus(sellerId, status, pageable)
+                    : productRepository.findBySellerIdAndStatusNot(sellerId, EstadoProducto.DELETED, pageable))
                 .map(p -> {
                     String urlPrincipal = obtenerUrlImagenPrincipal(p.getId());
                     return productMapper.toSummaryResponse(p, urlPrincipal);
