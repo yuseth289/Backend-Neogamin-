@@ -94,7 +94,7 @@ public class ProductController {
     @PreAuthorize("hasRole('SELLER')")
     @Operation(summary = "Mis productos", description = "Lista los productos del vendedor filtrados por estado.")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> listarMisProductos(
-            @RequestParam(defaultValue = "ACTIVE") EstadoProducto status,
+            @RequestParam(required = false) EstadoProducto status,
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
         UUID sellerId = SecurityUtils.getCurrentUserId();
