@@ -95,10 +95,11 @@ public class ProductController {
     @Operation(summary = "Mis productos", description = "Lista los productos del vendedor filtrados por estado.")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> listarMisProductos(
             @RequestParam(defaultValue = "ACTIVE") EstadoProducto status,
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
         UUID sellerId = SecurityUtils.getCurrentUserId();
         return ResponseEntity.ok(ApiResponse.ok(
-                productService.listarMisProductos(sellerId, status, pageable)
+                productService.listarMisProductos(sellerId, status, q, pageable)
         ));
     }
 

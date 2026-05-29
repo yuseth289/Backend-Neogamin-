@@ -42,4 +42,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByRoleNot(RolUsuario role, Pageable pageable);
 
     Page<User> findByRoleNotAndStatus(RolUsuario role, EstadoGenerico status, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT u FROM User u WHERE u.role != :role
+            AND (LOWER(u.firstName) LIKE LOWER(CONCAT('%',:q,'%'))
+                 OR LOWER(u.lastName)  LIKE LOWER(CONCAT('%',:q,'%'))
+                 OR LOWER(u.email)     LIKE LOWER(CONCAT('%',:q,'%')))
+            """)
+    Page<User> searchByRoleNot(RolUsuario role, String q, Pageable pageable);
 }

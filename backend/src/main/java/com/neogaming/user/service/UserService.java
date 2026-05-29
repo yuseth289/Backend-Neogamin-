@@ -118,10 +118,12 @@ public class UserService {
     // ── Admin ────────────────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public PageResponse<UserResponse> listarUsuarios(EstadoGenerico status, Pageable pageable) {
-        var page = (status != null)
-                ? userRepository.findByRoleNotAndStatus(RolUsuario.ADMIN, status, pageable)
-                : userRepository.findByRoleNot(RolUsuario.ADMIN, pageable);
+    public PageResponse<UserResponse> listarUsuarios(EstadoGenerico status, String q, Pageable pageable) {
+        var page = (q != null && !q.isBlank())
+                ? userRepository.searchByRoleNot(RolUsuario.ADMIN, q, pageable)
+                : (status != null)
+                    ? userRepository.findByRoleNotAndStatus(RolUsuario.ADMIN, status, pageable)
+                    : userRepository.findByRoleNot(RolUsuario.ADMIN, pageable);
         return PageResponse.from(page.map(userMapper::toResponse));
     }
 

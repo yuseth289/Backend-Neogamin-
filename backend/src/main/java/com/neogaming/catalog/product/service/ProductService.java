@@ -145,10 +145,16 @@ public class ProductService {
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> listarMisProductos(
             UUID userId, EstadoProducto status, Pageable pageable) {
+        return listarMisProductos(userId, status, null, pageable);
+    }
+
+    public PageResponse<ProductSummaryResponse> listarMisProductos(
+            UUID userId, EstadoProducto status, String q, Pageable pageable) {
 
         UUID sellerId = resolverSellerId(userId);
-        Page<ProductSummaryResponse> page = productRepository
-                .findBySellerIdAndStatus(sellerId, status, pageable)
+        Page<ProductSummaryResponse> page = (q != null && !q.isBlank()
+                ? productRepository.buscarPorSellerYNombre(sellerId, q, pageable)
+                : productRepository.findBySellerIdAndStatus(sellerId, status, pageable))
                 .map(p -> {
                     String urlPrincipal = obtenerUrlImagenPrincipal(p.getId());
                     return productMapper.toSummaryResponse(p, urlPrincipal);

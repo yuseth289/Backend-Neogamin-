@@ -39,9 +39,10 @@ public class AdminUserController {
     @Operation(summary = "Listar usuarios", description = "Retorna usuarios paginados (excluye admins). Filtro por estado opcional.")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> listar(
             @RequestParam(required = false) EstadoGenerico status,
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
 
-        return ResponseEntity.ok(ApiResponse.ok(userService.listarUsuarios(status, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(userService.listarUsuarios(status, q, pageable)));
     }
 
     @PatchMapping("/{id}/suspend")

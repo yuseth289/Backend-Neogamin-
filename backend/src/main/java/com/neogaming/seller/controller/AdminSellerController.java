@@ -51,9 +51,10 @@ public class AdminSellerController {
     )
     public ResponseEntity<ApiResponse<PageResponse<SellerResponse>>> listar(
             @RequestParam(required = false) EstadoGenerico status,
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
 
-        PageResponse<SellerResponse> page = sellerService.listarPorEstado(status, pageable);
+        PageResponse<SellerResponse> page = sellerService.listarPorEstado(status, q, pageable);
         return ResponseEntity.ok(ApiResponse.ok(page));
     }
 

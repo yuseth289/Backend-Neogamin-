@@ -67,6 +67,8 @@ public interface SellerRepository extends JpaRepository<Seller, UUID> {
 
     Page<Seller> findByStoreNameContainingIgnoreCaseAndStatus(String query, EstadoGenerico status, Pageable pageable);
 
+    Page<Seller> findByStoreNameContainingIgnoreCase(String query, Pageable pageable);
+
     /**
      * Cuenta los vendedores con un estado dado.
      * Usado en el dashboard de administración para mostrar pendientes de aprobación.

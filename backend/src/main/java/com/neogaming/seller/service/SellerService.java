@@ -324,11 +324,21 @@ public class SellerService {
      */
     @Transactional(readOnly = true)
     public PageResponse<SellerResponse> listarPorEstado(EstadoGenerico status, Pageable pageable) {
-        Page<SellerResponse> page = (status != null
-                ? sellerRepository.findByStatus(status, pageable)
-                : sellerRepository.findAll(pageable))
-                .map(sellerMapper::toResponse);
-        return PageResponse.from(page);
+        return listarPorEstado(status, null, pageable);
+    }
+
+    public PageResponse<SellerResponse> listarPorEstado(EstadoGenerico status, String q, Pageable pageable) {
+        Page<Seller> page;
+        if (q != null && !q.isBlank()) {
+            page = (status != null)
+                    ? sellerRepository.findByStoreNameContainingIgnoreCaseAndStatus(q, status, pageable)
+                    : sellerRepository.findByStoreNameContainingIgnoreCase(q, pageable);
+        } else {
+            page = (status != null)
+                    ? sellerRepository.findByStatus(status, pageable)
+                    : sellerRepository.findAll(pageable);
+        }
+        return PageResponse.from(page.map(sellerMapper::toResponse));
     }
 
     /**
