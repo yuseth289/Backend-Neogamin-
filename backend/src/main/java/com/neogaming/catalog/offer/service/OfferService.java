@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,7 +58,6 @@ public class OfferService {
     public OfferResponse crear(UUID productId, OfferRequest request, UUID userId) {
         Product product = buscarProductoDelVendedor(productId, userId);
 
-        // Validar que las fechas sean coherentes
         if (!request.endDate().isAfter(request.startDate())) {
             throw new BusinessRuleException(
                     "La fecha de fin debe ser posterior a la fecha de inicio",
@@ -64,25 +65,37 @@ public class OfferService {
             );
         }
 
-        // Verificar que la oferta no se solape con otra oferta activa
-        if (offerRepository.existeSolapamiento(productId, EstadoGenerico.ACTIVE,
-                request.startDate(), request.endDate())) {
+        Instant startInstant = request.startDate().atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant endInstant   = request.endDate().atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC).toInstant();
+
+        if (offerRepository.existeSolapamiento(productId, EstadoGenerico.ACTIVE, startInstant, endInstant)) {
             throw new BusinessRuleException(
                     "Ya existe una oferta activa para este producto en ese período",
                     "OFERTA_SOLAPADA"
             );
         }
 
-        BigDecimal precioConDescuento = calcularPrecioConDescuento(product, request);
+        BigDecimal precioFinal = product.getBasePrice()
+                .multiply(BigDecimal.ONE.add(
+                        product.getIvaPercent().divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP)
+                )).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal factor = BigDecimal.ONE.subtract(
+                request.discountPercent().divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP));
+        BigDecimal precioConDescuento = precioFinal.multiply(factor).setScale(2, RoundingMode.HALF_UP);
+
+        if (precioConDescuento.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessRuleException(
+                    "El descuento dejaría el precio en $0 o negativo", "DESCUENTO_MAYOR_QUE_PRECIO");
+        }
 
         Offer offer = Offer.builder()
                 .productId(productId)
-                .name(request.name())
-                .discountType(request.discountType())
-                .discountValue(request.discountValue())
+                .name("Descuento " + request.discountPercent().stripTrailingZeros().toPlainString() + "%")
+                .discountType(TipoDescuento.PERCENTAGE)
+                .discountValue(request.discountPercent())
                 .discountedPrice(precioConDescuento)
-                .startDate(request.startDate())
-                .endDate(request.endDate())
+                .startDate(startInstant)
+                .endDate(endInstant)
                 .status(EstadoGenerico.ACTIVE)
                 .build();
 
@@ -136,53 +149,6 @@ public class OfferService {
 
         offer.setStatus(EstadoGenerico.INACTIVE);
         offerRepository.save(offer);
-    }
-
-    // ===== MÉTODOS AUXILIARES =====
-
-    /**
-     * Calcula el precio con descuento aplicado al producto.
-     * Valida que el resultado sea positivo y razonable.
-     *
-     * @param product Producto sobre el cual se aplica el descuento
-     * @param request Datos de la oferta con tipo y valor de descuento
-     * @return Precio con descuento en COP redondeado a 2 decimales
-     */
-    private BigDecimal calcularPrecioConDescuento(Product product, OfferRequest request) {
-        // Calcular el precio final con IVA del producto
-        BigDecimal precioFinal = product.getBasePrice()
-                .multiply(BigDecimal.ONE.add(
-                        product.getIvaPercent().divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP)
-                )).setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal precioConDescuento;
-
-        if (request.discountType() == TipoDescuento.PERCENTAGE) {
-            // Descuento porcentual: máximo 90% de descuento
-            if (request.discountValue().compareTo(new BigDecimal("90")) > 0) {
-                throw new BusinessRuleException(
-                        "El descuento porcentual no puede superar el 90%",
-                        "DESCUENTO_EXCESIVO"
-                );
-            }
-            BigDecimal factor = BigDecimal.ONE.subtract(
-                    request.discountValue().divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP)
-            );
-            precioConDescuento = precioFinal.multiply(factor).setScale(2, RoundingMode.HALF_UP);
-        } else {
-            // Descuento fijo en COP
-            precioConDescuento = precioFinal.subtract(request.discountValue()).setScale(2, RoundingMode.HALF_UP);
-        }
-
-        // El precio con descuento no puede ser negativo ni cero
-        if (precioConDescuento.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BusinessRuleException(
-                    "El descuento aplicado dejaría el precio en $0 o negativo",
-                    "DESCUENTO_MAYOR_QUE_PRECIO"
-            );
-        }
-
-        return precioConDescuento;
     }
 
     /**
