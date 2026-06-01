@@ -1,5 +1,7 @@
 package com.neogaming.catalog.product.service;
 
+import com.neogaming.catalog.offer.domain.Offer;
+import com.neogaming.catalog.offer.repository.OfferRepository;
 import com.neogaming.catalog.product.domain.Product;
 import com.neogaming.catalog.product.domain.ProductImage;
 import com.neogaming.catalog.product.dto.request.ProductImageRequest;
@@ -10,6 +12,7 @@ import com.neogaming.catalog.product.dto.response.ProductSummaryResponse;
 import com.neogaming.catalog.product.mapper.ProductMapper;
 import com.neogaming.catalog.product.repository.ProductImageRepository;
 import com.neogaming.catalog.product.repository.ProductRepository;
+import com.neogaming.common.enums.EstadoGenerico;
 import com.neogaming.common.enums.EstadoProducto;
 import com.neogaming.common.exception.BusinessRuleException;
 import com.neogaming.common.exception.ResourceNotFoundException;
@@ -24,8 +27,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Servicio de gestión del catálogo de productos para NeoGaming.
@@ -49,6 +55,7 @@ public class ProductService {
     private final SellerRepository sellerRepository;
     private final InventoryService inventoryService;
     private final ProductMapper productMapper;
+    private final OfferRepository offerRepository;
 
     /** Número máximo de imágenes permitidas por producto */
     private static final int MAX_IMAGENES_POR_PRODUCTO = 10;
@@ -74,7 +81,9 @@ public class ProductService {
         } else {
             raw = productRepository.findByStatus(EstadoProducto.ACTIVE, pageable);
         }
-        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()))));
+        Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
+        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
+                p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
     }
 
     @Transactional(readOnly = true)
@@ -85,19 +94,22 @@ public class ProductService {
                         categoryId, EstadoProducto.ACTIVE,
                         brands.stream().map(String::toLowerCase).toList(), pageable)
                 : productRepository.findByCategoryIdAndStatus(categoryId, EstadoProducto.ACTIVE, pageable);
-        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()))));
+        Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
+        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
+                p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
     }
 
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> buscar(String query, List<String> brands, Pageable pageable) {
         boolean hasBrands = brands != null && !brands.isEmpty();
-        Page<ProductSummaryResponse> page = (hasBrands
+        Page<Product> raw = (hasBrands
                 ? productRepository.buscarPorTextoEstadoYMarcas(
                         query, EstadoProducto.ACTIVE,
                         brands.stream().map(String::toLowerCase).toList(), pageable)
-                : productRepository.buscarPorTextoYEstado(query, EstadoProducto.ACTIVE, pageable))
-                .map(p -> productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId())));
-        return PageResponse.from(page);
+                : productRepository.buscarPorTextoYEstado(query, EstadoProducto.ACTIVE, pageable));
+        Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
+        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
+                p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
     }
 
     /**
@@ -118,7 +130,11 @@ public class ProductService {
                 .findByProductIdOrderByPrimaryDescSortOrderAsc(product.getId());
 
         Integer availableStock = inventoryService.obtenerStockDisponible(product.getId());
-        return productMapper.toResponse(product, images, availableStock);
+        BigDecimal discount = offerRepository
+                .findOfertaVigente(product.getId(), EstadoGenerico.ACTIVE, Instant.now())
+                .map(Offer::getDiscountPercent)
+                .orElse(null);
+        return productMapper.toResponse(product, images, availableStock, discount);
     }
 
     // ===== GESTIÓN DEL VENDEDOR =====
@@ -463,6 +479,15 @@ public class ProductService {
                 .findByProductIdAndPrimaryTrue(productId)
                 .map(ProductImage::getUrl)
                 .orElse(null);
+    }
+
+    private Map<UUID, BigDecimal> obtenerDescuentosVigentes(List<Product> productos) {
+        if (productos.isEmpty()) return Map.of();
+        List<UUID> ids = productos.stream().map(Product::getId).toList();
+        return offerRepository.findVigentesByProductIds(ids, EstadoGenerico.ACTIVE, Instant.now())
+                .stream()
+                .collect(Collectors.toMap(Offer::getProductId, Offer::getDiscountPercent,
+                        (a, b) -> a.compareTo(b) >= 0 ? a : b));
     }
 
     /**

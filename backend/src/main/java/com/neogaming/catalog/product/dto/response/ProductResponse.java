@@ -61,5 +61,8 @@ public record ProductResponse(
         Instant updatedAt,
 
         /** Características del producto como pares clave-valor */
-        Map<String, String> specifications
+        Map<String, String> specifications,
+
+        /** Porcentaje de descuento de la oferta vigente. null si no hay oferta activa. */
+        java.math.BigDecimal activeDiscountPercent
 ) {}
