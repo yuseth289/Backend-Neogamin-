@@ -119,6 +119,7 @@ public class CategoryService {
                 .slug(slug)
                 .description(request.description())
                 .imageUrl(request.imageUrl())
+                .iconName(request.iconName())
                 .parentId(request.parentId())
                 .status(EstadoGenerico.ACTIVE)
                 .build();
@@ -152,6 +153,7 @@ public class CategoryService {
         if (request.imageUrl() != null) {
             category.setImageUrl(request.imageUrl());
         }
+        category.setIconName(request.iconName());
 
         List<CategoryResponse> hijos = categoryRepository
                 .findByParentIdAndStatusOrderByNameAsc(id, EstadoGenerico.ACTIVE)

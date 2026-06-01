@@ -51,6 +51,10 @@ public class Category extends AuditableEntity {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    /** Nombre del ícono Lucide asociado (ej: lucideGamepad2). Nulo = ícono por defecto. */
+    @Column(name = "icon_name", length = 100)
+    private String iconName;
+
     /**
      * UUID de la categoría padre para la jerarquía de dos niveles.
      * null = categoría raíz (padre).

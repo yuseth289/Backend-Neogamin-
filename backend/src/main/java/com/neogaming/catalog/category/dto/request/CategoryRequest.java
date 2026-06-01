@@ -28,6 +28,10 @@ public record CategoryRequest(
         @Size(max = 500, message = "La URL de imagen no puede superar los 500 caracteres")
         String imageUrl,
 
+        /** Nombre del ícono Lucide (ej: lucideGamepad2). Nulo = ícono por defecto. */
+        @Size(max = 100, message = "El nombre del ícono no puede superar los 100 caracteres")
+        String iconName,
+
         /** UUID de la categoría padre. null = categoría raíz. */
         UUID parentId
 ) {}
