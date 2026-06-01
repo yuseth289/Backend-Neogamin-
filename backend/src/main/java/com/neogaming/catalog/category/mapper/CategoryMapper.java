@@ -25,6 +25,7 @@ public class CategoryMapper {
                 category.getSlug(),
                 category.getDescription(),
                 category.getImageUrl(),
+                category.getIconName(),
                 category.getParentId(),
                 List.of()  // Sin hijos — se pueblan en el servicio para el árbol
         );
@@ -45,6 +46,7 @@ public class CategoryMapper {
                 category.getSlug(),
                 category.getDescription(),
                 category.getImageUrl(),
+                category.getIconName(),
                 category.getParentId(),
                 children
         );

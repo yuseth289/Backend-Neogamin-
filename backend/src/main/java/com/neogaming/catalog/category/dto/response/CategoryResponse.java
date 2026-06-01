@@ -23,6 +23,9 @@ public record CategoryResponse(
         String description,
         String imageUrl,
 
+        /** Nombre del ícono Lucide asociado (ej: lucideGamepad2). Nulo = ícono por defecto. */
+        String iconName,
+
         /** UUID del padre. null si es categoría raíz. */
         UUID parentId,
 
