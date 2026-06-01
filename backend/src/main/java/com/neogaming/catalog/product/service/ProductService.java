@@ -132,7 +132,7 @@ public class ProductService {
         Integer availableStock = inventoryService.obtenerStockDisponible(product.getId());
         BigDecimal discount = offerRepository
                 .findOfertaVigente(product.getId(), EstadoGenerico.ACTIVE, Instant.now())
-                .map(Offer::getDiscountPercent)
+                .map(Offer::getDiscountValue)
                 .orElse(null);
         return productMapper.toResponse(product, images, availableStock, discount);
     }
@@ -486,7 +486,7 @@ public class ProductService {
         List<UUID> ids = productos.stream().map(Product::getId).toList();
         return offerRepository.findVigentesByProductIds(ids, EstadoGenerico.ACTIVE, Instant.now())
                 .stream()
-                .collect(Collectors.toMap(Offer::getProductId, Offer::getDiscountPercent,
+                .collect(Collectors.toMap(Offer::getProductId, Offer::getDiscountValue,
                         (a, b) -> a.compareTo(b) >= 0 ? a : b));
     }
 
