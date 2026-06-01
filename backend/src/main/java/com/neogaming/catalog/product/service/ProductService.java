@@ -22,7 +22,9 @@ import com.neogaming.inventory.service.InventoryService;
 import com.neogaming.seller.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,15 +73,16 @@ public class ProductService {
      */
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> listarCatalogoPublico(UUID sellerId, List<String> brands, Pageable pageable) {
+        Pageable pg = remapSort(pageable);
         Page<Product> raw;
         boolean hasBrands = brands != null && !brands.isEmpty();
         if (sellerId != null) {
-            raw = productRepository.findBySellerIdAndStatus(sellerId, EstadoProducto.ACTIVE, pageable);
+            raw = productRepository.findBySellerIdAndStatus(sellerId, EstadoProducto.ACTIVE, pg);
         } else if (hasBrands) {
             List<String> brandLower = brands.stream().map(String::toLowerCase).toList();
-            raw = productRepository.findByStatusAndBrandIgnoreCaseIn(EstadoProducto.ACTIVE, brandLower, pageable);
+            raw = productRepository.findByStatusAndBrandIgnoreCaseIn(EstadoProducto.ACTIVE, brandLower, pg);
         } else {
-            raw = productRepository.findByStatus(EstadoProducto.ACTIVE, pageable);
+            raw = productRepository.findByStatus(EstadoProducto.ACTIVE, pg);
         }
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
@@ -88,12 +91,13 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> listarPorCategoria(UUID categoryId, List<String> brands, Pageable pageable) {
+        Pageable pg = remapSort(pageable);
         boolean hasBrands = brands != null && !brands.isEmpty();
         Page<Product> raw = hasBrands
                 ? productRepository.findByCategoryIdAndStatusAndBrandIgnoreCaseIn(
                         categoryId, EstadoProducto.ACTIVE,
-                        brands.stream().map(String::toLowerCase).toList(), pageable)
-                : productRepository.findByCategoryIdAndStatus(categoryId, EstadoProducto.ACTIVE, pageable);
+                        brands.stream().map(String::toLowerCase).toList(), pg)
+                : productRepository.findByCategoryIdAndStatus(categoryId, EstadoProducto.ACTIVE, pg);
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
                 p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
@@ -101,12 +105,13 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public PageResponse<ProductSummaryResponse> buscar(String query, List<String> brands, Pageable pageable) {
+        Pageable pg = remapSort(pageable);
         boolean hasBrands = brands != null && !brands.isEmpty();
         Page<Product> raw = (hasBrands
                 ? productRepository.buscarPorTextoEstadoYMarcas(
                         query, EstadoProducto.ACTIVE,
-                        brands.stream().map(String::toLowerCase).toList(), pageable)
-                : productRepository.buscarPorTextoYEstado(query, EstadoProducto.ACTIVE, pageable));
+                        brands.stream().map(String::toLowerCase).toList(), pg)
+                : productRepository.buscarPorTextoYEstado(query, EstadoProducto.ACTIVE, pg));
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
                 p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
@@ -499,6 +504,27 @@ public class ProductService {
      * @param sellerId UUID del vendedor
      * @return Slug único garantizado
      */
+    /**
+     * Traduce campos de ordenamiento del cliente (DTO) a campos reales de la entidad Product.
+     * Evita PropertyReferenceException cuando el cliente envía campos calculados o de otras entidades.
+     */
+    private Pageable remapSort(Pageable pageable) {
+        Map<String, String> fieldMap = Map.of(
+                "finalPrice",    "basePrice",
+                "averageRating", "createdAt",
+                "totalReviews",  "createdAt"
+        );
+        Sort mapped = Sort.by(
+                pageable.getSort().stream()
+                        .map(o -> new Sort.Order(
+                                o.getDirection(),
+                                fieldMap.getOrDefault(o.getProperty(), o.getProperty())))
+                        .toList()
+        );
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                mapped.isSorted() ? mapped : Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
     private String generarSlugUnico(String name, UUID sellerId) {
         // Usar los primeros 8 caracteres del sellerId como sufijo
         String sellerSuffix = sellerId.toString().substring(0, 8);
