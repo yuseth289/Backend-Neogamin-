@@ -147,8 +147,7 @@ public class OfferService {
                 .filter(o -> o.getProductId().equals(productId))
                 .orElseThrow(() -> new ResourceNotFoundException("Oferta", offerId.toString()));
 
-        offer.setStatus(EstadoGenerico.INACTIVE);
-        offerRepository.save(offer);
+        offerRepository.delete(offer);
     }
 
     /**
