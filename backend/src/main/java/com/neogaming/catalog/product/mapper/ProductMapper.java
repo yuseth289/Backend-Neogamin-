@@ -35,6 +35,11 @@ public class ProductMapper {
     }
 
     public ProductResponse toResponse(Product product, List<ProductImage> images, Integer availableStock) {
+        return toResponse(product, images, availableStock, null);
+    }
+
+    public ProductResponse toResponse(Product product, List<ProductImage> images,
+                                      Integer availableStock, BigDecimal activeDiscountPercent) {
         List<ProductImageResponse> imageResponses = images.stream()
                 .map(this::toImageResponse)
                 .toList();
@@ -56,7 +61,8 @@ public class ProductMapper {
                 imageResponses,
                 product.getCreatedAt(),
                 product.getUpdatedAt(),
-                product.getSpecifications() != null ? product.getSpecifications() : new HashMap<>()
+                product.getSpecifications() != null ? product.getSpecifications() : new HashMap<>(),
+                activeDiscountPercent
         );
     }
 
@@ -73,6 +79,11 @@ public class ProductMapper {
     }
 
     public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl, Integer availableStock) {
+        return toSummaryResponse(product, primaryImageUrl, availableStock, null);
+    }
+
+    public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl,
+                                                     Integer availableStock, BigDecimal activeDiscountPercent) {
         return new ProductSummaryResponse(
                 product.getId(),
                 product.getSellerId(),
@@ -84,7 +95,8 @@ public class ProductMapper {
                 calcularPrecioFinal(product.getBasePrice(), product.getIvaPercent()),
                 product.getStatus(),
                 availableStock,
-                primaryImageUrl
+                primaryImageUrl,
+                activeDiscountPercent
         );
     }
 

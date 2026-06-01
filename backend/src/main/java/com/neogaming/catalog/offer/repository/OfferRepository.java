@@ -60,4 +60,13 @@ public interface OfferRepository extends JpaRepository<Offer, UUID> {
             """)
     boolean existeSolapamiento(UUID productId, EstadoGenerico status,
                                Instant startDate, Instant endDate);
+
+    @Query("""
+            SELECT o FROM Offer o
+            WHERE o.productId IN :productIds
+            AND o.status = :status
+            AND o.startDate <= :ahora
+            AND o.endDate >= :ahora
+            """)
+    List<Offer> findVigentesByProductIds(List<UUID> productIds, EstadoGenerico status, Instant ahora);
 }

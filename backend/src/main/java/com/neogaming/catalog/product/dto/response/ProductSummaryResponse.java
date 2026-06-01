@@ -33,5 +33,8 @@ public record ProductSummaryResponse(
         Integer availableStock,
 
         /** URL de la imagen principal. null si no tiene imágenes. */
-        String primaryImageUrl
+        String primaryImageUrl,
+
+        /** Porcentaje de descuento de la oferta vigente. null si no hay oferta activa. */
+        java.math.BigDecimal activeDiscountPercent
 ) {}
