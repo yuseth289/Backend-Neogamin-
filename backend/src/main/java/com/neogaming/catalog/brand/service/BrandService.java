@@ -82,6 +82,13 @@ public class BrandService {
         brandRepository.save(brand);
     }
 
+    public void eliminarPermanente(UUID id) {
+        if (!brandRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Marca", id.toString());
+        }
+        brandRepository.deleteById(id);
+    }
+
     private BrandResponse toResponse(Brand brand) {
         return new BrandResponse(
                 brand.getId(),

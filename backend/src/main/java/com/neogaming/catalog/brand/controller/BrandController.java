@@ -86,4 +86,13 @@ public class BrandController {
         brandService.activar(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
+
+    @DeleteMapping("/{id}/permanent")
+    @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Eliminar marca permanentemente")
+    public ResponseEntity<ApiResponse<Void>> eliminarPermanente(@PathVariable UUID id) {
+        brandService.eliminarPermanente(id);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
 }
