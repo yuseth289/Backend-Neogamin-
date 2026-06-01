@@ -20,7 +20,7 @@ import jakarta.validation.constraints.Size;
 public record StockAdjustRequest(
 
         @NotNull(message = "La cantidad es obligatoria")
-        @Min(value = 1, message = "La cantidad debe ser al menos 1")
+        @Min(value = 0, message = "La cantidad no puede ser negativa")
         Integer quantity,
 
         @Size(max = 300, message = "Las notas no pueden superar los 300 caracteres")
