@@ -493,7 +493,7 @@ public class ProductService {
     private Page<Product> buscarConFiltros(List<String> brands, Pageable pg,
                                            Function<String, Page<Product>> queryFn) {
         boolean hasBrands = brands != null && !brands.isEmpty();
-        if (!hasBrands) return queryFn.apply(null);
+        if (!hasBrands) return queryFn.apply("");
         if (brands.size() == 1) return queryFn.apply(brands.get(0).toLowerCase());
         Set<UUID> seen = new LinkedHashSet<>();
         List<Product> merged = new ArrayList<>();

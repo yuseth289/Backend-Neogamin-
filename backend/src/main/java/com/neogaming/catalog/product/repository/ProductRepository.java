@@ -38,11 +38,16 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
      * Catálogo público con todos los filtros opcionales: sellerId, brand (LIKE), rango de precio.
      * Pasa null en cualquier parámetro para omitir ese filtro.
      */
+    /**
+     * Catálogo público con filtros opcionales: sellerId, brand (LIKE parcial), rango de precio.
+     * Pasar brand="" para omitir el filtro de marca (LIKE '%%' = sin filtro).
+     * Pasar sellerId=null, minPrice=null, maxPrice=null para omitir esos filtros.
+     */
     @Query("""
             SELECT p FROM Product p
             WHERE p.status = :status
             AND (:sellerId IS NULL OR p.sellerId = :sellerId)
-            AND (:brand IS NULL OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :brand, '%')))
+            AND LOWER(p.brand) LIKE LOWER(CONCAT('%', :brand, '%'))
             AND (:minPrice IS NULL OR p.basePrice >= :minPrice)
             AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice)
             """)
@@ -50,13 +55,14 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                                        BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 
     /**
-     * Catálogo por categoría con filtros opcionales: brand (LIKE), rango de precio.
+     * Catálogo por categoría con filtros opcionales: brand (LIKE parcial), rango de precio.
+     * Pasar brand="" para omitir el filtro de marca.
      */
     @Query("""
             SELECT p FROM Product p
             WHERE p.categoryId = :categoryId
             AND p.status = :status
-            AND (:brand IS NULL OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :brand, '%')))
+            AND LOWER(p.brand) LIKE LOWER(CONCAT('%', :brand, '%'))
             AND (:minPrice IS NULL OR p.basePrice >= :minPrice)
             AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice)
             """)
@@ -64,7 +70,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
                                                     BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 
     /**
-     * Búsqueda de texto con filtros opcionales: brand (LIKE), rango de precio.
+     * Búsqueda de texto con filtros opcionales: brand (LIKE parcial), rango de precio.
+     * Pasar brand="" para omitir el filtro de marca.
      */
     @Query("""
             SELECT p FROM Product p
@@ -72,7 +79,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%'))
                  OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%'))
                  OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :query, '%')))
-            AND (:brand IS NULL OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :brand, '%')))
+            AND LOWER(p.brand) LIKE LOWER(CONCAT('%', :brand, '%'))
             AND (:minPrice IS NULL OR p.basePrice >= :minPrice)
             AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice)
             """)
