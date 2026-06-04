@@ -19,7 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Servicio de gestión de inventario para NeoGaming.
@@ -285,6 +289,13 @@ public class InventoryService {
         return inventoryRepository.findByProductId(productId)
                 .map(inv -> inv.getPhysicalStock() - inv.getReservedStock())
                 .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, Integer> obtenerStocksDisponibles(Collection<UUID> productIds) {
+        if (productIds.isEmpty()) return Map.of();
+        return inventoryRepository.findByProductIdIn(productIds).stream()
+                .collect(Collectors.toMap(Inventory::getProductId, Inventory::getAvailableStock));
     }
 
     private void registrarMovimiento(Inventory inventory, TipoMovimientoStock tipo,

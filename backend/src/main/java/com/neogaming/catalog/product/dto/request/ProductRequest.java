@@ -29,9 +29,11 @@ public record ProductRequest(
         @Size(max = 10000, message = "La descripción no puede superar los 10000 caracteres")
         String description,
 
+        @NotBlank(message = "La marca es obligatoria")
         @Size(max = 100, message = "La marca no puede superar los 100 caracteres")
         String brand,
 
+        @NotBlank(message = "El SKU es obligatorio")
         @Size(max = 100, message = "El SKU no puede superar los 100 caracteres")
         String sku,
 
@@ -39,7 +41,7 @@ public record ProductRequest(
         UUID categoryId,
 
         @NotNull(message = "El precio base es obligatorio")
-        @DecimalMin(value = "0.0", message = "El precio base no puede ser negativo")
+        @DecimalMin(value = "100.0", inclusive = true, message = "El precio base mínimo es $100 COP")
         @Digits(integer = 12, fraction = 2, message = "El precio base tiene formato inválido")
         BigDecimal basePrice,
 

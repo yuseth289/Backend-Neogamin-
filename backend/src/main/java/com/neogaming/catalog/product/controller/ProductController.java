@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
@@ -58,30 +59,36 @@ public class ProductController {
     // ===== CATÁLOGO PÚBLICO =====
 
     @GetMapping
-    @Operation(summary = "Listar catálogo", description = "Retorna productos activos. Filtra por sellerId y/o brand[].")
+    @Operation(summary = "Listar catálogo", description = "Retorna productos activos. Filtra por sellerId, brand[], minPrice y maxPrice.")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> listarCatalogo(
             @RequestParam(required = false) UUID sellerId,
             @RequestParam(required = false) java.util.List<String> brand,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.listarCatalogoPublico(sellerId, brand, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.listarCatalogoPublico(sellerId, brand, minPrice, maxPrice, pageable)));
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Buscar productos", description = "Búsqueda de texto con filtro opcional por brand[].")
+    @Operation(summary = "Buscar productos", description = "Búsqueda de texto con filtro opcional por brand[], minPrice y maxPrice.")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> buscar(
             @RequestParam String q,
             @RequestParam(required = false) java.util.List<String> brand,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.buscar(q, brand, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.buscar(q, brand, minPrice, maxPrice, pageable)));
     }
 
     @GetMapping("/category/{categoryId}")
-    @Operation(summary = "Productos por categoría", description = "Lista productos activos de una categoría con filtro opcional por brand[].")
+    @Operation(summary = "Productos por categoría", description = "Lista productos activos de una categoría con filtro opcional por brand[], minPrice y maxPrice.")
     public ResponseEntity<ApiResponse<PageResponse<ProductSummaryResponse>>> listarPorCategoria(
             @PathVariable UUID categoryId,
             @RequestParam(required = false) java.util.List<String> brand,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.ok(productService.listarPorCategoria(categoryId, brand, pageable)));
+        return ResponseEntity.ok(ApiResponse.ok(productService.listarPorCategoria(categoryId, brand, minPrice, maxPrice, pageable)));
     }
 
     @GetMapping("/{slug}")

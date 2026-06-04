@@ -15,6 +15,7 @@ import com.neogaming.catalog.product.repository.ProductRepository;
 import com.neogaming.common.enums.EstadoGenerico;
 import com.neogaming.common.enums.EstadoProducto;
 import com.neogaming.common.exception.BusinessRuleException;
+import com.neogaming.common.exception.ConflictException;
 import com.neogaming.common.exception.ResourceNotFoundException;
 import com.neogaming.common.response.PageResponse;
 import com.neogaming.common.util.SlugUtils;
@@ -30,9 +31,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -72,49 +77,42 @@ public class ProductService {
      * @return Página de productos activos
      */
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> listarCatalogoPublico(UUID sellerId, List<String> brands, Pageable pageable) {
+    public PageResponse<ProductSummaryResponse> listarCatalogoPublico(UUID sellerId, List<String> brands,
+                                                                       BigDecimal minPrice, BigDecimal maxPrice,
+                                                                       Pageable pageable) {
         Pageable pg = remapSort(pageable);
-        Page<Product> raw;
-        boolean hasBrands = brands != null && !brands.isEmpty();
-        if (sellerId != null) {
-            raw = productRepository.findBySellerIdAndStatus(sellerId, EstadoProducto.ACTIVE, pg);
-        } else if (hasBrands) {
-            List<String> brandLower = brands.stream().map(String::toLowerCase).toList();
-            raw = productRepository.findByStatusAndBrandIgnoreCaseIn(EstadoProducto.ACTIVE, brandLower, pg);
-        } else {
-            raw = productRepository.findByStatus(EstadoProducto.ACTIVE, pg);
-        }
+        Page<Product> raw = buscarConFiltros(brands, pg,
+                brand -> productRepository.findByStatusFiltered(EstadoProducto.ACTIVE, sellerId, brand, minPrice, maxPrice, pg));
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
+        Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
         return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
-                p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
+                p, obtenerUrlImagenPrincipal(p.getId()), stocks.get(p.getId()), discounts.get(p.getId()))));
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> listarPorCategoria(UUID categoryId, List<String> brands, Pageable pageable) {
+    public PageResponse<ProductSummaryResponse> listarPorCategoria(UUID categoryId, List<String> brands,
+                                                                    BigDecimal minPrice, BigDecimal maxPrice,
+                                                                    Pageable pageable) {
         Pageable pg = remapSort(pageable);
-        boolean hasBrands = brands != null && !brands.isEmpty();
-        Page<Product> raw = hasBrands
-                ? productRepository.findByCategoryIdAndStatusAndBrandIgnoreCaseIn(
-                        categoryId, EstadoProducto.ACTIVE,
-                        brands.stream().map(String::toLowerCase).toList(), pg)
-                : productRepository.findByCategoryIdAndStatus(categoryId, EstadoProducto.ACTIVE, pg);
+        Page<Product> raw = buscarConFiltros(brands, pg,
+                brand -> productRepository.findByCategoryIdAndStatusFiltered(categoryId, EstadoProducto.ACTIVE, brand, minPrice, maxPrice, pg));
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
+        Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
         return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
-                p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
+                p, obtenerUrlImagenPrincipal(p.getId()), stocks.get(p.getId()), discounts.get(p.getId()))));
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<ProductSummaryResponse> buscar(String query, List<String> brands, Pageable pageable) {
+    public PageResponse<ProductSummaryResponse> buscar(String query, List<String> brands,
+                                                       BigDecimal minPrice, BigDecimal maxPrice,
+                                                       Pageable pageable) {
         Pageable pg = remapSort(pageable);
-        boolean hasBrands = brands != null && !brands.isEmpty();
-        Page<Product> raw = (hasBrands
-                ? productRepository.buscarPorTextoEstadoYMarcas(
-                        query, EstadoProducto.ACTIVE,
-                        brands.stream().map(String::toLowerCase).toList(), pg)
-                : productRepository.buscarPorTextoYEstado(query, EstadoProducto.ACTIVE, pg));
+        Page<Product> raw = buscarConFiltros(brands, pg,
+                brand -> productRepository.buscarFiltrado(query, EstadoProducto.ACTIVE, brand, minPrice, maxPrice, pg));
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
+        Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
         return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
-                p, obtenerUrlImagenPrincipal(p.getId()), null, discounts.get(p.getId()))));
+                p, obtenerUrlImagenPrincipal(p.getId()), stocks.get(p.getId()), discounts.get(p.getId()))));
     }
 
     /**
@@ -211,6 +209,12 @@ public class ProductService {
                 ));
 
         UUID sellerId = seller.getId();
+
+        if (request.sku() != null && !request.sku().isBlank() &&
+                productRepository.existsBySellerIdAndSkuAndStatusNot(sellerId, request.sku(), EstadoProducto.DELETED)) {
+            throw new ConflictException("Ya tienes un producto activo con el SKU: " + request.sku(), "SKU_DUPLICADO");
+        }
+
         String slug = generarSlugUnico(request.name(), sellerId);
         BigDecimal ivaPercent = request.ivaPercent() != null
                 ? request.ivaPercent()
@@ -486,6 +490,32 @@ public class ProductService {
                 .orElse(null);
     }
 
+    private Page<Product> buscarConFiltros(List<String> brands, Pageable pg,
+                                           Function<String, Page<Product>> queryFn) {
+        boolean hasBrands = brands != null && !brands.isEmpty();
+        if (!hasBrands) return queryFn.apply(null);
+        if (brands.size() == 1) return queryFn.apply(brands.get(0).toLowerCase());
+        Set<UUID> seen = new LinkedHashSet<>();
+        List<Product> merged = new ArrayList<>();
+        long total = 0;
+        for (String b : brands) {
+            Page<Product> page = queryFn.apply(b.toLowerCase());
+            total = Math.max(total, page.getTotalElements());
+            for (Product p : page.getContent()) {
+                if (seen.add(p.getId())) merged.add(p);
+            }
+        }
+        int maxSize = pg.getPageSize();
+        List<Product> content = merged.size() > maxSize ? merged.subList(0, maxSize) : merged;
+        return new org.springframework.data.domain.PageImpl<>(content, pg, total);
+    }
+
+    private Map<UUID, Integer> obtenerStocksParaProductos(List<Product> productos) {
+        if (productos.isEmpty()) return Map.of();
+        List<UUID> ids = productos.stream().map(Product::getId).toList();
+        return inventoryService.obtenerStocksDisponibles(ids);
+    }
+
     private Map<UUID, BigDecimal> obtenerDescuentosVigentes(List<Product> productos) {
         if (productos.isEmpty()) return Map.of();
         List<UUID> ids = productos.stream().map(Product::getId).toList();
@@ -526,9 +556,9 @@ public class ProductService {
     }
 
     private String generarSlugUnico(String name, UUID sellerId) {
-        // Usar los primeros 8 caracteres del sellerId como sufijo
         String sellerSuffix = sellerId.toString().substring(0, 8);
-        String baseSlug = SlugUtils.toSlug(name) + "-" + sellerSuffix;
+        String truncatedName = name.length() > 70 ? name.substring(0, 70) : name;
+        String baseSlug = SlugUtils.toSlug(truncatedName) + "-" + sellerSuffix;
         String candidato = baseSlug;
         int contador = 2;
 
