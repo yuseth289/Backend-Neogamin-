@@ -1,4 +1,5 @@
 """Unit tests for SearchAgent — all Gemini calls are mocked."""
+import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.models.search_models import SearchRequest, SearchResponse, ProductRecommendation, ExtractedEntities
@@ -45,15 +46,13 @@ class TestSearchAgentModels:
     def test_search_response_serializes_to_camel(self):
         rec = ProductRecommendation(
             product_id="p1",
-            product_name="Mouse X",
             relevance_score=0.92,
             explanation="Excelente opción para FPS",
-            price=145000,
-            price_formatted="$145.000",
-            stock_available=True,
+            price_fit=True,
         )
         resp = SearchResponse(
             recommendations=[rec],
+            structured_filters={},
             needs_clarification=False,
             clarification_question=None,
             intent_classified="product_search",
@@ -74,8 +73,8 @@ class TestSearchAgentModels:
             brand=None,
             use_case="FPS gaming",
             game_mentioned="Fortnite",
-            technical_specs=[],
-            compatibility_with=None,
+            technical_specs={},
+            compatibility_with=[],
         )
         assert entities.budget_max_cop == 150000
         assert entities.use_case == "FPS gaming"
@@ -96,38 +95,41 @@ class TestSearchAgentNeedsClarification:
 
 @pytest.mark.asyncio
 class TestSearchAgentFlow:
-    @patch("src.agents.search.search_agent.httpx.AsyncClient")
+    @patch("src.agents.search.search_tools.httpx.AsyncClient")
     @patch("src.agents.search.search_agent.get_chat_model")
     async def test_run_search_agent_returns_recommendations(
         self, mock_get_model, mock_httpx_class, search_request, mock_product_list
     ):
-        # Mock Gemini structured output
+        # Mock Gemini: analyze_query returns JSON with entities + intent
+        gemini_payload = json.dumps({
+            "entities": {
+                "budget_max_cop": 150000,
+                "category": "Periféricos",
+                "use_case": "FPS gaming",
+            },
+            "intent": "search",
+        })
+        # generate_explanations call returns a ranked list
+        explanations_payload = json.dumps([
+            {"product_id": "prod-1", "explanation": "Ideal para FPS.", "price_fit": True},
+            {"product_id": "prod-2", "explanation": "Buena relación precio.", "price_fit": True},
+        ])
+
         mock_model = MagicMock()
-        mock_model.with_structured_output.return_value.ainvoke = AsyncMock(
-            return_value=ExtractedEntities(
-                budget_max_cop=150000,
-                category="Periféricos",
-                use_case="FPS gaming",
-                budget_min_cop=None,
-                brand=None,
-                game_mentioned=None,
-                technical_specs=[],
-                compatibility_with=None,
-            )
-        )
-        mock_model.ainvoke = AsyncMock(return_value=MagicMock(content="Estas opciones son ideales."))
+        mock_model.ainvoke = AsyncMock(side_effect=[
+            MagicMock(content=gemini_payload),   # analyze_query_node
+            MagicMock(content=explanations_payload),  # generate_explanations_node
+        ])
         mock_get_model.return_value = mock_model
 
         # Mock httpx call to /internal/products/search
         mock_client = AsyncMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
-        mock_client.get = AsyncMock(
-            return_value=MagicMock(
-                status_code=200,
-                json=MagicMock(return_value={"data": {"content": mock_product_list}}),
-            )
-        )
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status = MagicMock()
+        mock_resp.json = MagicMock(return_value={"content": mock_product_list})
+        mock_client.get = AsyncMock(return_value=mock_resp)
         mock_httpx_class.return_value = mock_client
 
         from src.agents.search.search_agent import run_search_agent

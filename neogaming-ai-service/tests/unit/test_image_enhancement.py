@@ -9,9 +9,7 @@ from src.models.seller_models import (
 )
 from src.services.image_enhancement.mock_provider import MockProvider
 
-TINY_PNG_B64 = (
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDQABGQGB0I1CAAAAABJRU5ErkJggg=="
-)
+TINY_PNG_B64 = "dGVzdCBpbWFnZSBkYXRh"  # base64("test image data")
 
 
 @pytest.fixture
@@ -104,7 +102,7 @@ class TestProviderFactory:
             mock_settings.image_enhancement_provider = "mock"
             from src.services.image_enhancement import get_provider
             from src.services.image_enhancement.mock_provider import MockProvider
-            provider = get_provider("mock")
+            provider = get_provider()
             assert isinstance(provider, MockProvider)
 
 

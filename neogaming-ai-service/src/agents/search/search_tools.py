@@ -7,6 +7,13 @@ logger = get_logger(__name__)
 
 _TIMEOUT = httpx.Timeout(15.0)
 
+_CLARIFICATION_MIN_WORDS = 2
+
+
+def needs_clarification(query: str) -> bool:
+    """Returns True if the query is too vague to produce useful search results."""
+    return len(query.strip().split()) <= _CLARIFICATION_MIN_WORDS
+
 
 async def fetch_products_from_spring(filters: dict) -> list[dict]:
     """Call Spring Boot /internal/products/search with structured filters."""
