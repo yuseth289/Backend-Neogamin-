@@ -151,8 +151,9 @@ public class PaymentService {
         String mpStatus = (String) mpPago.get("status");
         String externalReference = (String) mpPago.get("external_reference");
 
-        log.info("Webhook MP recibido — paymentId: {}, status: {}, ref: {}",
-                mpPaymentId, mpStatus, externalReference);
+        String statusDetail = (String) mpPago.getOrDefault("status_detail", "sin_detalle");
+        log.info("Webhook MP recibido — paymentId: {}, status: {}, status_detail: {}, ref: {}",
+                mpPaymentId, mpStatus, statusDetail, externalReference);
 
         // Buscar el pago por el external_reference (es el checkoutId)
         UUID checkoutId = UUID.fromString(externalReference);
@@ -178,6 +179,11 @@ public class PaymentService {
         EstadoPago nuevoEstado = mapearEstadoMP(mpStatus);
         payment.setStatus(nuevoEstado);
         paymentRepository.save(payment);
+
+        if (nuevoEstado == EstadoPago.REJECTED) {
+            log.warn("Pago rechazado — checkoutId: {}, paymentId: {}, motivo: {}",
+                    checkoutId, mpPaymentId, statusDetail);
+        }
 
         // Si el pago fue aprobado, crear la orden y la factura
         if (nuevoEstado == EstadoPago.APPROVED) {

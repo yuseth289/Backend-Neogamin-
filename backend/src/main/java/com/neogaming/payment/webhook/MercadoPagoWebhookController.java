@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Enumeration;
 import java.util.Map;
 
 /**
@@ -91,11 +92,25 @@ public class MercadoPagoWebhookController {
         String xSignature = request.getHeader("x-signature");
         String xRequestId = request.getHeader("x-request-id");
 
-        // El ID de la notificación llega como query param (formato antiguo de MP) o en el body
+        // Diagnóstico temporal — ver qué query params y headers llegan de MP
+        Enumeration<String> paramNames = request.getParameterNames();
+        StringBuilder paramLog = new StringBuilder();
+        while (paramNames.hasMoreElements()) {
+            String p = paramNames.nextElement();
+            paramLog.append(p).append("=").append(request.getParameter(p)).append(" ");
+        }
+        log.info("Webhook MP diag — query-params: [{}] | x-signature present: {} | x-request-id: {}",
+                paramLog.toString().trim(), xSignature != null, xRequestId);
+
+        // El ID de la notificación llega como query param — MP puede enviarlo como "id" o "data.id"
         String notificationId = request.getParameter("id");
+        if (notificationId == null || notificationId.isBlank()) {
+            notificationId = request.getParameter("data.id");
+        }
         if (notificationId == null || notificationId.isBlank()) {
             notificationId = "unknown";
         }
+        log.info("Webhook MP diag — notificationId usado en manifest: [{}]", notificationId);
 
         // ── 3. Leer raw body ANTES de parsear JSON ─────────────────────────────
         // Rule 5: raw body capturado antes de cualquier parsing
