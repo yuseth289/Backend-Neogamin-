@@ -156,6 +156,10 @@ public class PaymentService {
                 mpPaymentId, mpStatus, statusDetail, externalReference);
 
         // Buscar el pago por el external_reference (es el checkoutId)
+        if (externalReference == null || externalReference.isBlank()) {
+            log.warn("Webhook MP — external_reference nulo para paymentId: {}. Ignorando.", mpPaymentId);
+            return;
+        }
         UUID checkoutId = UUID.fromString(externalReference);
         Payment payment = paymentRepository.findByCheckoutId(checkoutId)
                 .orElseGet(() -> {
