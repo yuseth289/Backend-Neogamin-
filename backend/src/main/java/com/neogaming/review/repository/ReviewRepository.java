@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -70,4 +72,21 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             AND r.status = 'APPROVED'
             """)
     Long contarResenasPorVendedor(UUID sellerId);
+
+    /** Proyección para ratings en bulk. */
+    interface ProductRating {
+        UUID getProductId();
+        Double getAverageRating();
+        Long getTotalReviews();
+    }
+
+    @Query("""
+            SELECT r.productId AS productId,
+                   AVG(r.rating) AS averageRating,
+                   COUNT(r) AS totalReviews
+            FROM Review r
+            WHERE r.productId IN :productIds AND r.status = 'APPROVED'
+            GROUP BY r.productId
+            """)
+    List<ProductRating> calcularRatingsParaProductos(Collection<UUID> productIds);
 }

@@ -98,6 +98,14 @@ public class ProductMapper {
     public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl,
                                                      Integer availableStock, BigDecimal activeDiscountPercent,
                                                      String storeName, String storeSlug) {
+        return toSummaryResponse(product, primaryImageUrl, availableStock, activeDiscountPercent,
+                storeName, storeSlug, null, null);
+    }
+
+    public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl,
+                                                     Integer availableStock, BigDecimal activeDiscountPercent,
+                                                     String storeName, String storeSlug,
+                                                     Double averageRating, Long totalReviews) {
         return new ProductSummaryResponse(
                 product.getId(),
                 product.getSellerId(),
@@ -112,7 +120,9 @@ public class ProductMapper {
                 product.getStatus(),
                 availableStock,
                 primaryImageUrl,
-                activeDiscountPercent
+                activeDiscountPercent,
+                averageRating,
+                totalReviews
         );
     }
 

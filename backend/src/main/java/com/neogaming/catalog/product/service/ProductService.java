@@ -20,6 +20,7 @@ import com.neogaming.common.exception.ResourceNotFoundException;
 import com.neogaming.common.response.PageResponse;
 import com.neogaming.common.util.SlugUtils;
 import com.neogaming.inventory.service.InventoryService;
+import com.neogaming.review.repository.ReviewRepository;
 import com.neogaming.seller.repository.SellerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -64,6 +65,7 @@ public class ProductService {
     private final ProductImageRepository productImageRepository;
     private final SellerRepository sellerRepository;
     private final InventoryService inventoryService;
+    private final ReviewRepository reviewRepository;
     private final ProductMapper productMapper;
     private final OfferRepository offerRepository;
 
@@ -89,11 +91,14 @@ public class ProductService {
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
         Map<UUID, SellerInfo> tiendas = obtenerInfoTiendas(raw.getContent());
+        Map<UUID, RatingInfo> ratings = obtenerRatingsParaProductos(raw.getContent());
         return PageResponse.from(raw.map(p -> {
             SellerInfo t = tiendas.get(p.getSellerId());
+            RatingInfo r = ratings.get(p.getId());
             return productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()),
                     stocks.get(p.getId()), discounts.get(p.getId()),
-                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null);
+                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null,
+                    r != null ? r.averageRating() : null, r != null ? r.totalReviews() : null);
         }));
     }
 
@@ -107,11 +112,14 @@ public class ProductService {
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
         Map<UUID, SellerInfo> tiendas = obtenerInfoTiendas(raw.getContent());
+        Map<UUID, RatingInfo> ratings = obtenerRatingsParaProductos(raw.getContent());
         return PageResponse.from(raw.map(p -> {
             SellerInfo t = tiendas.get(p.getSellerId());
+            RatingInfo r = ratings.get(p.getId());
             return productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()),
                     stocks.get(p.getId()), discounts.get(p.getId()),
-                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null);
+                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null,
+                    r != null ? r.averageRating() : null, r != null ? r.totalReviews() : null);
         }));
     }
 
@@ -125,11 +133,14 @@ public class ProductService {
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
         Map<UUID, SellerInfo> tiendas = obtenerInfoTiendas(raw.getContent());
+        Map<UUID, RatingInfo> ratings = obtenerRatingsParaProductos(raw.getContent());
         return PageResponse.from(raw.map(p -> {
             SellerInfo t = tiendas.get(p.getSellerId());
+            RatingInfo r = ratings.get(p.getId());
             return productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()),
                     stocks.get(p.getId()), discounts.get(p.getId()),
-                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null);
+                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null,
+                    r != null ? r.averageRating() : null, r != null ? r.totalReviews() : null);
         }));
     }
 
@@ -538,6 +549,17 @@ public class ProductService {
     }
 
     private record SellerInfo(String storeName, String storeSlug) {}
+
+    private record RatingInfo(Double averageRating, Long totalReviews) {}
+
+    private Map<UUID, RatingInfo> obtenerRatingsParaProductos(Collection<Product> productos) {
+        if (productos.isEmpty()) return Map.of();
+        List<UUID> ids = productos.stream().map(Product::getId).toList();
+        return reviewRepository.calcularRatingsParaProductos(ids).stream()
+                .collect(Collectors.toMap(
+                        ReviewRepository.ProductRating::getProductId,
+                        r -> new RatingInfo(r.getAverageRating(), r.getTotalReviews())));
+    }
 
     private Map<UUID, SellerInfo> obtenerInfoTiendas(Collection<Product> productos) {
         if (productos.isEmpty()) return Map.of();

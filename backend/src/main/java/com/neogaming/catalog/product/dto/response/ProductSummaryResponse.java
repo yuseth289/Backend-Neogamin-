@@ -38,5 +38,11 @@ public record ProductSummaryResponse(
         String primaryImageUrl,
 
         /** Porcentaje de descuento de la oferta vigente. null si no hay oferta activa. */
-        java.math.BigDecimal activeDiscountPercent
+        java.math.BigDecimal activeDiscountPercent,
+
+        /** Promedio de calificaciones aprobadas. null si no tiene reseñas. */
+        Double averageRating,
+
+        /** Total de reseñas aprobadas. */
+        Long totalReviews
 ) {}
