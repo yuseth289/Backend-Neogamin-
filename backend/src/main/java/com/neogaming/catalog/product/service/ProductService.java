@@ -29,9 +29,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.neogaming.seller.domain.Seller;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -85,8 +88,13 @@ public class ProductService {
                 brand -> productRepository.findByStatusFiltered(EstadoProducto.ACTIVE, sellerId, brand, minPrice, maxPrice, pg));
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
-        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
-                p, obtenerUrlImagenPrincipal(p.getId()), stocks.get(p.getId()), discounts.get(p.getId()))));
+        Map<UUID, SellerInfo> tiendas = obtenerInfoTiendas(raw.getContent());
+        return PageResponse.from(raw.map(p -> {
+            SellerInfo t = tiendas.get(p.getSellerId());
+            return productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()),
+                    stocks.get(p.getId()), discounts.get(p.getId()),
+                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null);
+        }));
     }
 
     @Transactional(readOnly = true)
@@ -98,8 +106,13 @@ public class ProductService {
                 brand -> productRepository.findByCategoryIdAndStatusFiltered(categoryId, EstadoProducto.ACTIVE, brand, minPrice, maxPrice, pg));
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
-        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
-                p, obtenerUrlImagenPrincipal(p.getId()), stocks.get(p.getId()), discounts.get(p.getId()))));
+        Map<UUID, SellerInfo> tiendas = obtenerInfoTiendas(raw.getContent());
+        return PageResponse.from(raw.map(p -> {
+            SellerInfo t = tiendas.get(p.getSellerId());
+            return productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()),
+                    stocks.get(p.getId()), discounts.get(p.getId()),
+                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null);
+        }));
     }
 
     @Transactional(readOnly = true)
@@ -111,8 +124,13 @@ public class ProductService {
                 brand -> productRepository.buscarFiltrado(query, EstadoProducto.ACTIVE, brand, minPrice, maxPrice, pg));
         Map<UUID, BigDecimal> discounts = obtenerDescuentosVigentes(raw.getContent());
         Map<UUID, Integer> stocks = obtenerStocksParaProductos(raw.getContent());
-        return PageResponse.from(raw.map(p -> productMapper.toSummaryResponse(
-                p, obtenerUrlImagenPrincipal(p.getId()), stocks.get(p.getId()), discounts.get(p.getId()))));
+        Map<UUID, SellerInfo> tiendas = obtenerInfoTiendas(raw.getContent());
+        return PageResponse.from(raw.map(p -> {
+            SellerInfo t = tiendas.get(p.getSellerId());
+            return productMapper.toSummaryResponse(p, obtenerUrlImagenPrincipal(p.getId()),
+                    stocks.get(p.getId()), discounts.get(p.getId()),
+                    t != null ? t.storeName() : null, t != null ? t.storeSlug() : null);
+        }));
     }
 
     /**
@@ -137,7 +155,10 @@ public class ProductService {
                 .findOfertaVigente(product.getId(), EstadoGenerico.ACTIVE, Instant.now())
                 .map(Offer::getDiscountValue)
                 .orElse(null);
-        return productMapper.toResponse(product, images, availableStock, discount);
+        Seller seller = sellerRepository.findById(product.getSellerId()).orElse(null);
+        return productMapper.toResponse(product, images, availableStock, discount,
+                seller != null ? seller.getStoreName() : null,
+                seller != null ? seller.getStoreSlug() : null);
     }
 
     // ===== GESTIÓN DEL VENDEDOR =====
@@ -514,6 +535,16 @@ public class ProductService {
         if (productos.isEmpty()) return Map.of();
         List<UUID> ids = productos.stream().map(Product::getId).toList();
         return inventoryService.obtenerStocksDisponibles(ids);
+    }
+
+    private record SellerInfo(String storeName, String storeSlug) {}
+
+    private Map<UUID, SellerInfo> obtenerInfoTiendas(Collection<Product> productos) {
+        if (productos.isEmpty()) return Map.of();
+        List<UUID> sellerIds = productos.stream().map(Product::getSellerId).distinct().toList();
+        return sellerRepository.findByIdIn(sellerIds).stream()
+                .collect(Collectors.toMap(Seller::getId,
+                        s -> new SellerInfo(s.getStoreName(), s.getStoreSlug())));
     }
 
     private Map<UUID, BigDecimal> obtenerDescuentosVigentes(List<Product> productos) {

@@ -31,15 +31,21 @@ public class ProductMapper {
      * @return DTO completo del producto
      */
     public ProductResponse toResponse(Product product, List<ProductImage> images) {
-        return toResponse(product, images, null);
+        return toResponse(product, images, null, null, null, null);
     }
 
     public ProductResponse toResponse(Product product, List<ProductImage> images, Integer availableStock) {
-        return toResponse(product, images, availableStock, null);
+        return toResponse(product, images, availableStock, null, null, null);
     }
 
     public ProductResponse toResponse(Product product, List<ProductImage> images,
                                       Integer availableStock, BigDecimal activeDiscountPercent) {
+        return toResponse(product, images, availableStock, activeDiscountPercent, null, null);
+    }
+
+    public ProductResponse toResponse(Product product, List<ProductImage> images,
+                                      Integer availableStock, BigDecimal activeDiscountPercent,
+                                      String storeName, String storeSlug) {
         List<ProductImageResponse> imageResponses = images.stream()
                 .map(this::toImageResponse)
                 .toList();
@@ -47,6 +53,8 @@ public class ProductMapper {
         return new ProductResponse(
                 product.getId(),
                 product.getSellerId(),
+                storeName,
+                storeSlug,
                 product.getCategoryId(),
                 product.getName(),
                 product.getSlug(),
@@ -75,18 +83,26 @@ public class ProductMapper {
      * @return DTO resumido para tarjeta de producto
      */
     public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl) {
-        return toSummaryResponse(product, primaryImageUrl, null);
+        return toSummaryResponse(product, primaryImageUrl, null, null, null, null);
     }
 
     public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl, Integer availableStock) {
-        return toSummaryResponse(product, primaryImageUrl, availableStock, null);
+        return toSummaryResponse(product, primaryImageUrl, availableStock, null, null, null);
     }
 
     public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl,
                                                      Integer availableStock, BigDecimal activeDiscountPercent) {
+        return toSummaryResponse(product, primaryImageUrl, availableStock, activeDiscountPercent, null, null);
+    }
+
+    public ProductSummaryResponse toSummaryResponse(Product product, String primaryImageUrl,
+                                                     Integer availableStock, BigDecimal activeDiscountPercent,
+                                                     String storeName, String storeSlug) {
         return new ProductSummaryResponse(
                 product.getId(),
                 product.getSellerId(),
+                storeName,
+                storeSlug,
                 product.getCategoryId(),
                 product.getName(),
                 product.getSlug(),

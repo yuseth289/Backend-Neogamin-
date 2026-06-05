@@ -29,6 +29,8 @@ public record ProductResponse(
 
         UUID id,
         UUID sellerId,
+        String storeName,
+        String storeSlug,
         UUID categoryId,
 
         String name,

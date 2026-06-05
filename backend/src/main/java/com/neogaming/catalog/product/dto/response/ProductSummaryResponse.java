@@ -15,6 +15,8 @@ public record ProductSummaryResponse(
 
         UUID id,
         UUID sellerId,
+        String storeName,
+        String storeSlug,
         UUID categoryId,
 
         String name,
