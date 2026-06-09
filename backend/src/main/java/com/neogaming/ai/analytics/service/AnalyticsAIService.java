@@ -18,10 +18,10 @@ public class AnalyticsAIService {
         return aiServiceClient.analytics(request);
     }
 
-    public AnalyticsResultDTO generateReport(String reportType) {
+    public AnalyticsResultDTO generateReport(String reportType, String adminId) {
         AnalyticsAIRequest request = new AnalyticsAIRequest(
                 "Genera un reporte completo de " + reportType,
-                null, null, reportType
+                adminId, null, null, reportType
         );
         return aiServiceClient.analytics(request);
     }

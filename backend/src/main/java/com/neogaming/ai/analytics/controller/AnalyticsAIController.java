@@ -4,6 +4,7 @@ import com.neogaming.ai.analytics.dto.request.AnalyticsAIRequest;
 import com.neogaming.ai.analytics.dto.response.AnalyticsResultDTO;
 import com.neogaming.ai.analytics.service.AnalyticsAIService;
 import com.neogaming.common.response.ApiResponse;
+import com.neogaming.common.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,7 +29,12 @@ public class AnalyticsAIController {
     public ResponseEntity<ApiResponse<AnalyticsResultDTO>> query(
             @RequestBody @Valid AnalyticsAIRequest request) {
 
-        AnalyticsResultDTO result = analyticsAIService.query(request);
+        String adminId = SecurityUtils.getCurrentUserId().toString();
+        AnalyticsAIRequest enriched = new AnalyticsAIRequest(
+                request.query(), adminId, request.dateFrom(),
+                request.dateTo(), request.reportType() != null ? request.reportType() : "adhoc"
+        );
+        AnalyticsResultDTO result = analyticsAIService.query(enriched);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
@@ -37,7 +43,8 @@ public class AnalyticsAIController {
     public ResponseEntity<ApiResponse<AnalyticsResultDTO>> generateReport(
             @PathVariable String type) {
 
-        AnalyticsResultDTO result = analyticsAIService.generateReport(type);
+        String adminId = SecurityUtils.getCurrentUserId().toString();
+        AnalyticsResultDTO result = analyticsAIService.generateReport(type, adminId);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 }
