@@ -14,6 +14,8 @@ import com.neogaming.common.enums.EstadoCarrito;
 import com.neogaming.common.enums.EstadoProducto;
 import com.neogaming.common.exception.BusinessRuleException;
 import com.neogaming.common.exception.ResourceNotFoundException;
+import com.neogaming.inventory.domain.Inventory;
+import com.neogaming.inventory.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +46,7 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+    private final InventoryRepository inventoryRepository;
 
     /**
      * Obtiene el carrito activo del usuario con todos sus ítems.
@@ -83,16 +86,35 @@ public class CartService {
                         "PRODUCTO_NO_DISPONIBLE"
                 ));
 
+        Inventory inv = inventoryRepository.findByProductId(request.productId())
+                .orElseThrow(() -> new BusinessRuleException(
+                        "El producto no tiene inventario registrado",
+                        "INVENTARIO_NO_ENCONTRADO"
+                ));
+
         Cart cart = obtenerOCrearCarrito(userId);
 
         // Si ya existe el ítem, incrementar cantidad; si no, crearlo
         cartItemRepository.findByCartIdAndProductId(cart.getId(), request.productId())
                 .ifPresentOrElse(
                         item -> {
-                            item.setQuantity(item.getQuantity() + request.quantity());
+                            int totalSolicitado = item.getQuantity() + request.quantity();
+                            if (!inv.tieneStockDisponible(totalSolicitado)) {
+                                throw new BusinessRuleException(
+                                        "Solo hay " + inv.getAvailableStock() + " unidades disponibles",
+                                        "STOCK_INSUFICIENTE"
+                                );
+                            }
+                            item.setQuantity(totalSolicitado);
                             cartItemRepository.save(item);
                         },
                         () -> {
+                            if (!inv.tieneStockDisponible(request.quantity())) {
+                                throw new BusinessRuleException(
+                                        "Solo hay " + inv.getAvailableStock() + " unidades disponibles",
+                                        "STOCK_INSUFICIENTE"
+                                );
+                            }
                             BigDecimal precioFinal = calcularPrecioFinal(product);
                             CartItem nuevoItem = CartItem.builder()
                                     .cartId(cart.getId())
@@ -127,6 +149,14 @@ public class CartService {
             // Cantidad 0 o negativa: eliminar el ítem
             cartItemRepository.delete(item);
         } else {
+            inventoryRepository.findByProductId(item.getProductId()).ifPresent(inv -> {
+                if (!inv.tieneStockDisponible(cantidad)) {
+                    throw new BusinessRuleException(
+                            "Solo hay " + inv.getAvailableStock() + " unidades disponibles",
+                            "STOCK_INSUFICIENTE"
+                    );
+                }
+            });
             item.setQuantity(cantidad);
             cartItemRepository.save(item);
         }
@@ -252,6 +282,10 @@ public class CartService {
 
         boolean priceChanged = precioActual.compareTo(item.getUnitPrice()) != 0;
 
+        int availableStock = inventoryRepository.findByProductId(item.getProductId())
+                .map(Inventory::getAvailableStock)
+                .orElse(0);
+
         return new CartItemResponse(
                 item.getId(),
                 item.getProductId(),
@@ -261,7 +295,8 @@ public class CartService {
                 item.getUnitPrice(),
                 item.getSubtotal(),
                 priceChanged,
-                precioActual
+                precioActual,
+                availableStock
         );
     }
 

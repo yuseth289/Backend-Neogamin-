@@ -8,6 +8,7 @@ import com.neogaming.common.enums.EstadoCheckout;
 import com.neogaming.common.enums.EstadoPago;
 import com.neogaming.common.exception.BusinessRuleException;
 import com.neogaming.common.exception.ResourceNotFoundException;
+import com.neogaming.inventory.service.InventoryService;
 import com.neogaming.invoice.service.InvoiceService;
 import com.neogaming.order.dto.response.OrderResponse;
 import com.neogaming.order.service.OrderService;
@@ -55,6 +56,7 @@ public class PaymentService {
     private final CheckoutItemRepository checkoutItemRepository;
     private final OrderService orderService;
     private final InvoiceService invoiceService;
+    private final InventoryService inventoryService;
     private final MercadoPagoClient mpClient;
     private final PaymentMapper paymentMapper;
 
@@ -184,23 +186,35 @@ public class PaymentService {
         payment.setStatus(nuevoEstado);
         paymentRepository.save(payment);
 
-        if (nuevoEstado == EstadoPago.REJECTED) {
-            log.warn("Pago rechazado — checkoutId: {}, paymentId: {}, motivo: {}",
-                    checkoutId, mpPaymentId, statusDetail);
-        }
-
-        // Si el pago fue aprobado, crear la orden y la factura
         if (nuevoEstado == EstadoPago.APPROVED) {
             log.info("Pago aprobado para checkout {}. Creando orden...", checkoutId);
             OrderResponse orden = orderService.crearDesdeCheckout(checkoutId, payment.getId());
 
-            // Generar factura electrónica de forma asíncrona (no bloquea el webhook)
             invoiceService.generarFactura(orden.id(), payment.getId());
 
-            // Marcar el checkout como COMPLETED
             checkoutRepository.findById(checkoutId).ifPresent(checkout -> {
                 checkout.setStatus(EstadoCheckout.COMPLETED);
                 checkoutRepository.save(checkout);
+            });
+
+        } else if (nuevoEstado == EstadoPago.REJECTED
+                || nuevoEstado == EstadoPago.CANCELLED
+                || nuevoEstado == EstadoPago.REFUNDED) {
+            log.warn("Pago no completado ({}) — checkoutId: {}, paymentId: {}, motivo: {}",
+                    nuevoEstado, checkoutId, mpPaymentId, statusDetail);
+
+            // Liberar el stock reservado para cada ítem del checkout
+            List<CheckoutItem> items = checkoutItemRepository.findByCheckoutId(checkoutId);
+            items.forEach(item ->
+                    inventoryService.liberarStock(item.getProductId(), item.getQuantity(), checkoutId)
+            );
+
+            // Cancelar el checkout para que el usuario pueda reintentar con uno nuevo
+            checkoutRepository.findById(checkoutId).ifPresent(checkout -> {
+                if (checkout.getStatus() == EstadoCheckout.IN_PROGRESS) {
+                    checkout.setStatus(EstadoCheckout.CANCELLED);
+                    checkoutRepository.save(checkout);
+                }
             });
         }
     }

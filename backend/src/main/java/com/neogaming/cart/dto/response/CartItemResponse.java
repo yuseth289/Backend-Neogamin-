@@ -35,5 +35,8 @@ public record CartItemResponse(
         boolean priceChanged,
 
         /** Precio actual del producto (para mostrar el nuevo precio si cambió) */
-        BigDecimal currentPrice
+        BigDecimal currentPrice,
+
+        /** Stock disponible para compra en este momento (physicalStock - reservedStock) */
+        int availableStock
 ) {}
