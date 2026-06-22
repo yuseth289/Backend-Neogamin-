@@ -38,5 +38,8 @@ public record CartItemResponse(
         BigDecimal currentPrice,
 
         /** Stock disponible para compra en este momento (physicalStock - reservedStock) */
-        int availableStock
+        int availableStock,
+
+        /** Slug del producto para construir la URL de detalle: /product/{slug} */
+        String productSlug
 ) {}

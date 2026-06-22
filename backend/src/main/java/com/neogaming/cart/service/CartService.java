@@ -271,6 +271,7 @@ public class CartService {
         Product product = productRepository.findById(item.getProductId()).orElse(null);
 
         String productName = product != null ? product.getName() : "Producto no disponible";
+        String productSlug = product != null ? product.getSlug() : null;
         String imageUrl = productImageRepository
                 .findByProductIdAndPrimaryTrue(item.getProductId())
                 .map(img -> img.getUrl())
@@ -296,7 +297,8 @@ public class CartService {
                 item.getSubtotal(),
                 priceChanged,
                 precioActual,
-                availableStock
+                availableStock,
+                productSlug
         );
     }
 
