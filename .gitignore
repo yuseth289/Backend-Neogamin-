@@ -33,3 +33,21 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Dev scripts — runtime
+.dev-logs/
+.dev-pids
+
+# DB dumps / backups (contienen datos reales)
+*.sql
+*.dump
+*.backup
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Herramientas internas
+.agents/
+skills-lock.json
