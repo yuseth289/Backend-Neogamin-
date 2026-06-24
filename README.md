@@ -18,79 +18,142 @@ Plataforma de comercio electrónico de videojuegos y periféricos para el mercad
 
 ---
 
-## Levantar el proyecto en local
+## Setup paso a paso
 
-### 1. Clonar el repositorio
+Sigue este orden exacto la primera vez que configures el proyecto.
+
+---
+
+### Paso 1 — Clonar el repositorio
 
 ```bash
 git clone <url-del-repo>
 cd plan-a
 ```
 
-### 2. Configurar variables de entorno
+> El repositorio principal contiene el backend y el microservicio de IA.
+> El frontend (`front-neo/`) es un submódulo o repo anidado — ver Paso 2.
 
-Copia los archivos de ejemplo y completa los valores:
+---
+
+### Paso 2 — Instalar dependencias del frontend
+
+El frontend vive en `front-neo/` y tiene su propio `package.json`:
+
+```bash
+cd front-neo
+npm install
+cd ..
+```
+
+---
+
+### Paso 3 — Configurar variables de entorno
+
+**Backend:**
 
 ```bash
 cp backend/.env.example backend/.env
-cp neogaming-ai-service/.env.example neogaming-ai-service/.env
 ```
 
-Variables clave en `backend/.env`:
+Edita `backend/.env` y completa:
 
 ```env
 DB_URL=jdbc:postgresql://localhost:5432/neogaming
-DB_USERNAME=<tu_usuario_postgres>
+DB_USERNAME=<tu_usuario_postgres>       # ej: yuseth, postgres
 DB_PASSWORD=<tu_password_postgres>
 JWT_SECRET=neogaming-super-secret-dev-key-change-in-production-64chars!!
 MP_ACCESS_TOKEN=<token_sandbox_mercadopago>
 AI_INTERNAL_SECRET=neo-dev-secret-2026
+REDIS_HOST=localhost
+REDIS_PORT=6379
 ```
 
-### 3. Importar la base de datos
+**Microservicio IA:**
 
-Solicita el archivo `neogaming_seed.sql` a un compañero del equipo (no está en el repo por contener datos reales) y ejecuta:
+```bash
+cp neogaming-ai-service/.env.example neogaming-ai-service/.env
+```
+
+Edita `neogaming-ai-service/.env` y completa:
+
+```env
+GEMINI_API_KEY=<tu_api_key_gemini>
+AI_INTERNAL_SECRET=neo-dev-secret-2026
+SPRING_BOOT_BASE_URL=http://localhost:8080
+```
+
+> Pide las claves al líder del equipo. Nunca las compartas por chat ni las subas al repo.
+
+---
+
+### Paso 4 — Configurar PostgreSQL local
+
+Asegúrate de tener PostgreSQL instalado y corriendo. Luego establece una contraseña para tu usuario (necesaria para que Spring Boot conecte por TCP):
+
+```sql
+-- Ejecutar en pgAdmin o psql como superusuario:
+ALTER USER <tu_usuario> WITH PASSWORD '<tu_password>';
+```
+
+---
+
+### Paso 5 — Importar la base de datos
+
+Solicita el archivo `neogaming_seed.sql` a un compañero (no está en el repo por contener datos reales) y colócalo en la raíz del proyecto. Luego ejecuta:
 
 ```bash
 ./setup-db.sh
 ```
 
-El script crea la BD `neogaming`, importa el schema y los datos, y muestra el conteo final.
+El script crea la BD `neogaming`, importa el schema completo y todos los datos, y muestra el conteo final para confirmar.
 
-> Si tu usuario de postgres es diferente al del sistema, pásalo como variable:
+```
+✓ Base de datos lista
+  Usuarios:   16
+  Productos:  42
+  Categorías: 10
+```
+
+> Si tu usuario de postgres es diferente al del sistema operativo:
 > ```bash
 > PG_USER=postgres ./setup-db.sh
 > ```
 
-### 4. Levantar todo con un comando
+---
+
+### Paso 6 — Levantar todo
 
 ```bash
 ./dev.sh
 ```
 
-El script levanta en orden:
+El script levanta los servicios en este orden y espera que cada uno responda antes de continuar:
 
-1. **Docker** — Redis + MailHog
-2. **AI Microservice** — FastAPI/uvicorn en `:8001`
-3. **Backend** — Spring Boot en `:8080`
-4. **Frontend** — Angular en `:4200`
+| Orden | Servicio | Puerto |
+|---|---|---|
+| 1 | Docker: Redis | 6379 |
+| 2 | Docker: MailHog | 8025 |
+| 3 | AI Microservice (FastAPI) | 8001 |
+| 4 | Backend (Spring Boot) | 8080 |
+| 5 | Frontend (Angular) | 4200 |
 
-Para en cualquier momento con `Ctrl+C`.
+Para detener todo: `Ctrl+C` o `./dev.sh stop`
 
 ```bash
-./dev.sh stop   # detener todo
-./dev.sh logs   # ver rutas de logs
+./dev.sh logs   # ver rutas de cada log
 ```
 
-### 5. URLs de desarrollo
+---
 
-| Servicio | URL |
-|---|---|
-| Frontend | http://localhost:4200 |
-| Backend API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| AI Service | http://localhost:8001 |
-| MailHog (emails) | http://localhost:8025 |
+### Paso 7 — Verificar que todo funciona
+
+| Servicio | URL | Qué verificar |
+|---|---|---|
+| Frontend | http://localhost:4200 | Catálogo con productos |
+| Backend API | http://localhost:8080/swagger-ui.html | Swagger carga |
+| AI Service | http://localhost:8001/api/v1/ai/health | `{"status":"ok"}` |
+| MailHog | http://localhost:8025 | Panel de emails vacío |
 
 ---
 
