@@ -29,6 +29,7 @@ from src.models.analytics_models import (
     ExecutiveSummary,
     KPIResult,
 )
+from src.core.llm_json import parse_json_safely as _parse_json_safely
 from src.services.gemini_client import get_chat_model
 
 logger = get_logger(__name__)
@@ -54,14 +55,6 @@ class AnalyticsState(TypedDict):
     kpis: list[KPIResult]
     alerts: list[str]
     recommendations: list[str]
-
-
-def _parse_json_safely(text: str) -> dict | list:
-    cleaned = text.strip()
-    if cleaned.startswith("```"):
-        lines = cleaned.split("\n")
-        cleaned = "\n".join(lines[1:-1]) if len(lines) > 2 else cleaned
-    return json.loads(cleaned)
 
 
 async def classify_intent_node(state: AnalyticsState) -> dict:

@@ -18,6 +18,7 @@ from src.models.search_models import (
     SearchRequest,
     SearchResponse,
 )
+from src.core.llm_json import extract_text as _extract_text, parse_json_safely as _parse_json_safely
 from src.services.gemini_client import get_chat_model
 
 logger = get_logger(__name__)
@@ -38,23 +39,6 @@ class SearchState(TypedDict):
     greeting: str | None
     closing_message: str | None
     start_time: float
-
-
-def _extract_text(content: str | list) -> str:
-    if isinstance(content, list):
-        return "".join(
-            part.get("text", "") if isinstance(part, dict) else str(part)
-            for part in content
-        )
-    return content
-
-
-def _parse_json_safely(text: str | list) -> dict | list:
-    cleaned = _extract_text(text).strip()
-    if cleaned.startswith("```"):
-        lines = cleaned.split("\n")
-        cleaned = "\n".join(lines[1:-1]) if len(lines) > 2 else cleaned
-    return json.loads(cleaned)
 
 
 async def analyze_query_node(state: SearchState) -> dict:
