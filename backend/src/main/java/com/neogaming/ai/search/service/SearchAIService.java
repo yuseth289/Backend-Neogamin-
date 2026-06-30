@@ -78,6 +78,7 @@ public class SearchAIService {
 
         return new SearchResultDTO(
                 pythonResult.greeting(),
+                pythonResult.closingMessage(),
                 enriched,
                 pythonResult.structuredFilters(),
                 pythonResult.needsClarification(),

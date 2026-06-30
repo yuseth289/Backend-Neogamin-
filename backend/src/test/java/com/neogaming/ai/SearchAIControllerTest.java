@@ -44,6 +44,7 @@ class SearchAIControllerTest {
     void intelligentSearch_returnasRecomendaciones() throws Exception {
         PythonSearchResultDTO mockResult = new PythonSearchResultDTO(
                 "¡Hola! Aquí tienes algunas opciones.",
+                "¿Quieres que busque algo más específico?",
                 List.of(),
                 java.util.Map.of(),
                 false,

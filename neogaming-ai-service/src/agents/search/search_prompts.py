@@ -44,9 +44,13 @@ Also write a short, warm one-sentence greeting in Spanish that opens the respons
 acknowledge what they're looking for, in a casual Colombian gamer tone (e.g. "¡Hola! Encontré algunas
 opciones para tu setup gamer dentro de tu presupuesto.").
 
+Also write a short, friendly one-sentence closing in Spanish, inviting the user to ask for more help
+(e.g. "¿Quieres que compare alguno de estos o busque algo más específico?").
+
 Return a single JSON object (no markdown, no extra text):
 {{
   "greeting": "...",
+  "closing": "...",
   "items": [{{"product_id": "...", "explanation": "...", "price_fit": true/false}}]
 }}
 """

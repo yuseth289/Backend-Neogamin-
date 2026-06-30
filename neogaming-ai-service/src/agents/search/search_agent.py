@@ -36,6 +36,7 @@ class SearchState(TypedDict):
     needs_clarification: bool
     clarification_question: str | None
     greeting: str | None
+    closing_message: str | None
     start_time: float
 
 
@@ -109,7 +110,7 @@ async def call_products_api_node(state: SearchState) -> dict:
 async def generate_explanations_node(state: SearchState) -> dict:
     products = state.get("products") or []
     if not products:
-        return {"recommendations": [], "needs_clarification": False, "greeting": None}
+        return {"recommendations": [], "needs_clarification": False, "greeting": None, "closing_message": None}
 
     model = get_chat_model(temperature=0.4)
     products_summary = [{"product_id": p.get("id"), "name": p.get("name"), "price": p.get("price")} for p in products[:10]]
@@ -119,6 +120,7 @@ async def generate_explanations_node(state: SearchState) -> dict:
         products=json.dumps(products_summary, ensure_ascii=False),
     )
     greeting = "¡Hola! Aquí tienes algunas opciones para lo que buscas."
+    closing_message = "¿Quieres que busque algo más específico?"
     try:
         response = await model.ainvoke([HumanMessage(content=prompt)])
         parsed = _parse_json_safely(response.content)
@@ -128,6 +130,7 @@ async def generate_explanations_node(state: SearchState) -> dict:
         else:
             explanations_raw = parsed.get("items", [])
             greeting = parsed.get("greeting") or greeting
+            closing_message = parsed.get("closing") or closing_message
     except Exception as exc:
         logger.warning("explanation_generation_failed", error=str(exc))
         explanations_raw = [{"product_id": p.get("id"), "explanation": "Producto relevante para tu búsqueda.", "price_fit": True} for p in products[:5]]
@@ -156,6 +159,7 @@ async def generate_explanations_node(state: SearchState) -> dict:
         "recommendations": recommendations,
         "needs_clarification": needs_clarification,
         "greeting": greeting if recommendations else None,
+        "closing_message": closing_message if recommendations else None,
     }
 
 
@@ -221,6 +225,7 @@ async def run_search_agent(request: SearchRequest) -> SearchResponse:
         "needs_clarification": False,
         "clarification_question": None,
         "greeting": None,
+        "closing_message": None,
         "start_time": start,
     }
 
@@ -234,6 +239,7 @@ async def run_search_agent(request: SearchRequest) -> SearchResponse:
 
     return SearchResponse(
         greeting=final_state.get("greeting"),
+        closing_message=final_state.get("closing_message"),
         recommendations=final_state["recommendations"],
         structured_filters=filters,
         needs_clarification=final_state["needs_clarification"],

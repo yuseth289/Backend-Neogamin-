@@ -5,6 +5,7 @@ import java.util.Map;
 
 public record SearchResultDTO(
         String greeting,
+        String closingMessage,
         List<ProductRecommendationDTO> recommendations,
         Map<String, Object> structuredFilters,
         boolean needsClarification,

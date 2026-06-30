@@ -37,6 +37,7 @@ class SearchResponse(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     greeting: str | None = None
+    closing_message: str | None = None
     recommendations: list[ProductRecommendation]
     structured_filters: dict
     needs_clarification: bool
