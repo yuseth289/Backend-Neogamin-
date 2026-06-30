@@ -131,7 +131,9 @@ async def generate_explanations_node(state: SearchState) -> dict:
         if not product_data:
             continue
         price = product_data.get("price", 0) or 0
-        price_fit = item.get("price_fit", True)
+        price_fit = item.get("price_fit")
+        if price_fit is None:
+            price_fit = True
         if entities.budget_max_cop and price > entities.budget_max_cop:
             price_fit = False
         recommendations.append(ProductRecommendation(
