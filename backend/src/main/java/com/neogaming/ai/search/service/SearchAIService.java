@@ -50,6 +50,9 @@ public class SearchAIService {
                 boolean stockAvailable = inventoryRepository.findByProductId(p.getId())
                         .map(inv -> inv.getAvailableStock() > 0)
                         .orElse(false);
+                if (!stockAvailable) {
+                    continue;
+                }
                 String primaryImageUrl = productImageRepository
                         .findByProductIdAndPrimaryTrue(p.getId())
                         .map(img -> img.getUrl())
@@ -74,6 +77,7 @@ public class SearchAIService {
         }
 
         return new SearchResultDTO(
+                pythonResult.greeting(),
                 enriched,
                 pythonResult.structuredFilters(),
                 pythonResult.needsClarification(),

@@ -43,6 +43,7 @@ class SearchAIControllerTest {
     @DisplayName("POST /api/v1/ai/search/intelligent → 200 con recomendaciones")
     void intelligentSearch_returnasRecomendaciones() throws Exception {
         PythonSearchResultDTO mockResult = new PythonSearchResultDTO(
+                "¡Hola! Aquí tienes algunas opciones.",
                 List.of(),
                 java.util.Map.of(),
                 false,

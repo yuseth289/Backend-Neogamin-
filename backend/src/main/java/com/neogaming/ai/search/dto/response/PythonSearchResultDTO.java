@@ -5,6 +5,7 @@ import java.util.Map;
 
 /** Maps exactly the JSON that the Python AI service returns — no enriched fields. */
 public record PythonSearchResultDTO(
+        String greeting,
         List<RecommendationDTO> recommendations,
         Map<String, Object> structuredFilters,
         boolean needsClarification,

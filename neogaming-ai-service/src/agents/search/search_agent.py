@@ -35,6 +35,7 @@ class SearchState(TypedDict):
     recommendations: list[ProductRecommendation]
     needs_clarification: bool
     clarification_question: str | None
+    greeting: str | None
     start_time: float
 
 
@@ -108,7 +109,7 @@ async def call_products_api_node(state: SearchState) -> dict:
 async def generate_explanations_node(state: SearchState) -> dict:
     products = state.get("products") or []
     if not products:
-        return {"recommendations": [], "needs_clarification": False}
+        return {"recommendations": [], "needs_clarification": False, "greeting": None}
 
     model = get_chat_model(temperature=0.4)
     products_summary = [{"product_id": p.get("id"), "name": p.get("name"), "price": p.get("price")} for p in products[:10]]
@@ -117,9 +118,16 @@ async def generate_explanations_node(state: SearchState) -> dict:
         entities=state["entities"].model_dump() if state["entities"] else {},
         products=json.dumps(products_summary, ensure_ascii=False),
     )
+    greeting = "¡Hola! Aquí tienes algunas opciones para lo que buscas."
     try:
         response = await model.ainvoke([HumanMessage(content=prompt)])
-        explanations_raw: list[dict] = _parse_json_safely(response.content)  # type: ignore[assignment]
+        parsed = _parse_json_safely(response.content)
+        # Algunos modelos (ej. Groq) devuelven el array plano en vez del objeto pedido
+        if isinstance(parsed, list):
+            explanations_raw: list[dict] = parsed
+        else:
+            explanations_raw = parsed.get("items", [])
+            greeting = parsed.get("greeting") or greeting
     except Exception as exc:
         logger.warning("explanation_generation_failed", error=str(exc))
         explanations_raw = [{"product_id": p.get("id"), "explanation": "Producto relevante para tu búsqueda.", "price_fit": True} for p in products[:5]]
@@ -144,7 +152,11 @@ async def generate_explanations_node(state: SearchState) -> dict:
         ))
 
     needs_clarification = len(recommendations) == 0 and state.get("intent") != "search"
-    return {"recommendations": recommendations, "needs_clarification": needs_clarification}
+    return {
+        "recommendations": recommendations,
+        "needs_clarification": needs_clarification,
+        "greeting": greeting if recommendations else None,
+    }
 
 
 async def request_clarification_node(state: SearchState) -> dict:
@@ -208,6 +220,7 @@ async def run_search_agent(request: SearchRequest) -> SearchResponse:
         "recommendations": [],
         "needs_clarification": False,
         "clarification_question": None,
+        "greeting": None,
         "start_time": start,
     }
 
@@ -220,6 +233,7 @@ async def run_search_agent(request: SearchRequest) -> SearchResponse:
     filters.pop("q", None)
 
     return SearchResponse(
+        greeting=final_state.get("greeting"),
         recommendations=final_state["recommendations"],
         structured_filters=filters,
         needs_clarification=final_state["needs_clarification"],
