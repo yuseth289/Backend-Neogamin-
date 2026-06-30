@@ -31,11 +31,16 @@ def get_chat_model(temperature: float = 0.3, model: str | None = None) -> Runnab
     Si Gemini falla (ej. 429 por cuota agotada), la cadena reintenta
     automáticamente con Groq en vez de propagar la excepción.
     """
+    # max_retries=0: si Gemini falla, caer a Groq de inmediato en vez de
+    # reintentar contra el mismo proveedor agotado de cuota — cada llamada
+    # de un agente (search, seller, analytics) encadena varios pasos
+    # secuenciales, y los reintentos acumulados pueden superar el timeout
+    # del proxy y cortar la conexión antes de que el fallback responda.
     primary = ChatGoogleGenerativeAI(
         model=model or settings.gemini_model,
         google_api_key=settings.gemini_api_key,
         temperature=temperature,
-        max_retries=1,
+        max_retries=0,
     )
     if not settings.groq_api_key:
         return primary
