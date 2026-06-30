@@ -192,7 +192,7 @@ El archivo `neogaming_seed.sql` **no está en el repositorio** porque contiene d
 El proyecto se despliega automáticamente en Railway al hacer push a `main`.
 
 Servicios en producción:
-- **Backend**: `backend-neogamin-production-58ed.up.railway.app`
+- **Backend**: `backend-neogamin-production-c183.up.railway.app`
 - **Frontend**: SSR con Node
 - **AI Service**: FastAPI containerizado
 - **PostgreSQL** y **Redis**: gestionados por Railway
