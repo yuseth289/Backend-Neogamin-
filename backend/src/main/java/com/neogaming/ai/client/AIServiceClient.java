@@ -69,9 +69,10 @@ public class AIServiceClient {
             productData.put("features",      request.features()     != null ? request.features()     : java.util.List.of());
             productData.put("imagesBase64",  request.imagesBase64() != null ? request.imagesBase64() : java.util.List.of());
 
-            java.util.Map<String, Object> nested = java.util.Map.of(
-                    "productData", productData,
-                    "sellerId", request.sellerId() != null ? request.sellerId() : "anonymous");
+            java.util.Map<String, Object> nested = new java.util.LinkedHashMap<>();
+            nested.put("productData", productData);
+            nested.put("sellerId", request.sellerId() != null ? request.sellerId() : "anonymous");
+            if (request.instruction() != null) nested.put("instruction", request.instruction());
 
             String body = objectMapper.writeValueAsString(nested);
             String responseBody = post("/api/v1/ai/seller/assist", body);

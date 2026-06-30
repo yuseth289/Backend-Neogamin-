@@ -57,6 +57,7 @@ class SellerAssistRequest(BaseModel):
 
     product_data: RawProductData
     seller_id: str
+    instruction: str | None = None
 
 
 class SellerAssistResponse(BaseModel):

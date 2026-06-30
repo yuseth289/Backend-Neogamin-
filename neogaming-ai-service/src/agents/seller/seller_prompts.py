@@ -24,7 +24,7 @@ Product data:
 {product_data}
 
 Category guides: {category_guides}
-
+{instruction_block}
 Return JSON:
 {{
   "seo_title": "<max 80 chars, includes brand+model+key feature>",
@@ -38,6 +38,7 @@ Rules:
 - Title: brand + model + key differentiator
 - Description: conversational, gamer-friendly, Colombian Spanish
 - No invented specs — only based on provided data
+- If the seller gave a specific request above, prioritize it over the general rules
 """
 
 LISTING_SCORE_PROMPT = """

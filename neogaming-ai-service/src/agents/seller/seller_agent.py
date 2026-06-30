@@ -36,6 +36,7 @@ logger = get_logger(__name__)
 class SellerState(TypedDict):
     product_data: RawProductData
     seller_id: str
+    instruction: str | None
     category_guide: str
     image_analysis: list[ImageAnalysisResult]
     optimized_content: OptimizedContent | None
@@ -105,9 +106,14 @@ async def analyze_images_node(state: SellerState) -> dict:
 
 async def generate_content_node(state: SellerState) -> dict:
     model = get_chat_model(temperature=0.6)
+    instruction = state.get("instruction")
+    instruction_block = (
+        f"\nSeller's specific request: {instruction}\n" if instruction else ""
+    )
     prompt = CONTENT_OPTIMIZATION_PROMPT.format(
         product_data=json.dumps(state["product_data"].model_dump(), ensure_ascii=False),
         category_guides=state["category_guide"],
+        instruction_block=instruction_block,
     )
     try:
         response = await model.ainvoke([HumanMessage(content=prompt)])
@@ -282,6 +288,7 @@ async def run_seller_agent(request: SellerAssistRequest) -> SellerAssistResponse
     initial_state: SellerState = {
         "product_data": request.product_data,
         "seller_id": request.seller_id,
+        "instruction": request.instruction,
         "category_guide": "",
         "image_analysis": [],
         "optimized_content": None,

@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     nano_banana_model: str = "gemini-2.0-flash-exp"
     image_enhancement_provider: str = "nano_banana"
 
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
     langsmith_api_key: str = ""
     langsmith_tracing: bool = False
 

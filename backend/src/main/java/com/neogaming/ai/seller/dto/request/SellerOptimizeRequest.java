@@ -13,5 +13,6 @@ public record SellerOptimizeRequest(
         String rawDescription,
         List<String> features,
         List<String> imagesBase64,
-        String sellerId
+        String sellerId,
+        String instruction
 ) {}

@@ -61,7 +61,7 @@ public class SellerAIService {
 
         SellerOptimizeRequest request = new SellerOptimizeRequest(
                 name, category, brand, null, null, null,
-                List.of(), imagesBase64, sellerId
+                List.of(), imagesBase64, sellerId, null
         );
         return aiServiceClient.sellerAssist(request);
     }

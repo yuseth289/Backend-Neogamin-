@@ -40,7 +40,7 @@ public class SellerAIController {
         SellerOptimizeRequest withSeller = new SellerOptimizeRequest(
                 request.name(), request.category(), request.brand(), request.model(),
                 request.priceCop(), request.rawDescription(), request.features(),
-                request.imagesBase64(), sellerId);
+                request.imagesBase64(), sellerId, request.instruction());
         SellerAssistResultDTO result = sellerAIService.optimize(withSeller);
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
