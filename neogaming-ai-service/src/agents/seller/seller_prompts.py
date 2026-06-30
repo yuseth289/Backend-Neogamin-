@@ -72,7 +72,7 @@ Be conversational, direct, and encouraging. Use Colombian Spanish.
 
 Then return a JSON object with this exact structure:
 {{
-  "narrative": "<3-5 sentences answering the question with specific numbers and insights>",
+  "narrative": "<3-5 sentences answering the question with specific numbers and insights, ending with one short friendly question inviting the seller to ask for more detail>",
   "kpis": [
     {{
       "name": "<KPI name in Spanish>",

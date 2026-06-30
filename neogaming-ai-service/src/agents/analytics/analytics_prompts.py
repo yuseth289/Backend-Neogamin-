@@ -27,6 +27,7 @@ Write a clear, executive-level narrative insight in Spanish (3-5 sentences).
 Focus on the most important trends, anomalies, and actionable recommendations.
 Use specific numbers. Mention COP currency where relevant.
 Be direct and strategic — this is for the marketplace owner.
+End with one short, friendly question inviting the admin to ask for more detail or another report.
 """
 
 KPI_EXTRACTION_PROMPT = """
@@ -71,6 +72,7 @@ Write an executive insight in Spanish (3-5 sentences) analyzing:
 - Revenue concentration (is one seller dominating?)
 - Growth opportunities and recommendations
 Use specific numbers and store names from the data.
+End with one short, friendly question inviting the admin to ask for more detail or another report.
 """
 
 TRENDING_NARRATIVE_PROMPT = """
@@ -86,6 +88,7 @@ Write an executive insight in Spanish (3-5 sentences) covering:
 - Revenue impact of trending items
 - Inventory and supply recommendations
 - Cross-selling opportunities
+End with one short, friendly question inviting the admin to ask for more detail or another report.
 """
 
 CATEGORIES_NARRATIVE_PROMPT = """
@@ -101,4 +104,5 @@ Write an executive insight in Spanish (3-5 sentences) covering:
 - Underperforming categories with growth potential
 - Strategic recommendations for category mix
 - Seasonality or trend observations
+End with one short, friendly question inviting the admin to ask for more detail or another report.
 """
