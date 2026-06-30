@@ -1,6 +1,7 @@
 package com.neogaming.config;
 
 import com.neogaming.auth.filter.InternalTokenFilter;
+import com.neogaming.auth.filter.JwtAuthenticationEntryPoint;
 import com.neogaming.auth.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,6 +55,9 @@ public class SecurityConfig {
     /** Filtro que valida X-Internal-Token para endpoints /internal/** */
     private final InternalTokenFilter internalTokenFilter;
 
+    /** Responde 401 cuando no hay autenticación válida (token ausente, inválido o expirado) */
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
     /** Implementación que carga los datos del usuario desde la base de datos */
     private final UserDetailsService userDetailsService;
 
@@ -75,6 +79,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
 
                 // Reglas de acceso por endpoint
                 .authorizeHttpRequests(auth -> auth

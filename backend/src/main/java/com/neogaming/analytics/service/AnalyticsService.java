@@ -202,12 +202,13 @@ public class AnalyticsService {
 
     public List<Map<String, Object>> ingresosPorCategoria() {
         List<Object[]> rows = entityManager.createQuery("""
-                SELECT p.category.name, SUM(oi.subtotal), SUM(oi.quantity), COUNT(DISTINCT oi.orderId)
+                SELECT c.name, SUM(oi.subtotal), SUM(oi.quantity), COUNT(DISTINCT oi.orderId)
                 FROM OrderItem oi
                 JOIN Product p ON p.id = oi.productId
+                JOIN Category c ON c.id = p.categoryId
                 JOIN Order o ON o.id = oi.orderId
                 WHERE o.status NOT IN :excluidos
-                GROUP BY p.category.name
+                GROUP BY c.name
                 ORDER BY SUM(oi.subtotal) DESC
                 """, Object[].class)
                 .setParameter("excluidos", List.of(EstadoPedido.CANCELLED, EstadoPedido.REFUNDED))
