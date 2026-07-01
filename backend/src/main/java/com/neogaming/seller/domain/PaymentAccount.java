@@ -13,7 +13,8 @@ import java.util.UUID;
  *
  * Un vendedor puede registrar múltiples cuentas bancarias, pero solo
  * una puede estar activa (is_active = true) en un momento dado.
- * La cuenta activa es la que recibe los pagos del split de Mercado Pago.
+ * La cuenta activa es a la que se le liquida manualmente lo vendido
+ * (Mercado Pago aquí opera como collector único, sin split automático).
  *
  * En producción, el campo accountNumber debe estar cifrado con AES-256
  * antes de persistirse en la base de datos.
